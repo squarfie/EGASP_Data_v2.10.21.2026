@@ -152,9 +152,9 @@ AUTHENTICATION_BACKENDS = [
 SOCIALACCOUNT_PROVIDERS = {
     'google': {
         'APP': {
-            'client_id': os.getenv("GOOGLE_CLIENT_ID"),
-            'secret': os.getenv("GOOGLE_SECRET"),
-            'key': os.getenv("GOOGLE_KEY", ""),
+            'client_id': config("GOOGLE_CLIENT_ID"),
+            'secret': config("GOOGLE_SECRET"),
+            'key': config("GOOGLE_KEY", default=""),
         },
         "SCOPE": [
             "profile",
@@ -168,13 +168,17 @@ SOCIALACCOUNT_PROVIDERS = {
 # Automatically create user on Google login
 SOCIALACCOUNT_AUTO_SIGNUP = True
 
-# Do not ask for username
-ACCOUNT_USER_MODEL_USERNAME_FIELD = None
-ACCOUNT_USERNAME_REQUIRED = False
+# New allauth settings (Django 5+)
+ACCOUNT_LOGIN_METHODS = {"email"}
 
-# Email-only authentication
-ACCOUNT_EMAIL_REQUIRED = True
-ACCOUNT_AUTHENTICATION_METHOD = "email"
+ACCOUNT_SIGNUP_FIELDS = [
+    "email*",
+    "password1*",
+    "password2*",
+]
+
+ACCOUNT_USER_MODEL_USERNAME_FIELD = None
+
 
 # Do NOT require email verification for Google (optional)
 ACCOUNT_EMAIL_VERIFICATION = "none"
