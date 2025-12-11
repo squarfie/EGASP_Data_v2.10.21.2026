@@ -389,6 +389,10 @@ class egasp_Form(forms.ModelForm):
                 else:
                     self.fields['Permanent_City_fk'].queryset = City.objects.none()
 
+class EgaspUploadForm(forms.ModelForm):
+    class Meta:
+          model = Egasp_upload
+          fields = ['File_uploadEgasp']
 
 
 class Clinic_Form(forms.ModelForm):
@@ -460,6 +464,19 @@ class AntibioticEntryForm(forms.ModelForm):
         def __init__(self, *args, **kwargs):
             super(AntibioticEntryForm, self).__init__(*args, **kwargs)
             self.fields['ab_EgaspId'].widget.attrs['readonly'] = True  # Make Egasp_id read-only
+
+class UploadAntibioticForm(forms.ModelForm):
+    class Meta:
+          model = Upload_AntibioticEntry
+          fields = ['File_uploadAbx']
+
+    #ensure only csv and excel are uploaded
+    def clean_file_upload(self):
+            file = self.cleaned_data.get('File_uploadAbx') #make sure this matches the model 
+            if file:
+                if not file.name.endswith('.csv') and not file.name.endswith('.xlsx'):
+                    raise forms.ValidationError('File must be a CSV or Excel file.')
+            return file
 
 
 class SpecimenTypeForm(forms.ModelForm):

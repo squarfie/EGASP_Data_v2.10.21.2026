@@ -209,20 +209,31 @@
           <li class="nav-item">
             <a class="nav-link" 
                href="{% url 'download_combined_table' %}">
-              <i class="ni ni-cloud-download-95 text-warning"></i>
+              <i class="fa fa-cloud-download-alt text-warning"></i>
               <span class="nav-link-text ">Download Table</span>
             </a>
-            <hr class="my-3">
+            
           </li>
-          
           <li class="nav-item">
             <a class="nav-link" 
-               href="{% url 'add_breakpoints' %}">
-              <i class="ni ni-spaceship text-info"></i>
-              <span class="nav-link-text ">Breakpoints</span>
+               target="_blank" 
+               href="#" data-toggle="modal" data-target="#uploadEgaspModal">
+              <i class="fa fa-cloud-upload-alt text-warning"></i>
+              <span class="nav-link-text ">Upload Egasp</span>
             </a>
           </li>
+        </li>
+          <!-- <li class="nav-item">
+            <a class="nav-link" 
+               target="_blank" 
+               href="#" data-toggle="modal" data-target="#uploadAbxModal">
+              <i class="fa fa-cloud-upload-alt text-warning"></i>
+              <span class="nav-link-text ">Upload Antibiotics</span>
+            </a>
+          </li>
+           -->
           <li class="nav-item">
+            <hr class="my-3">
             <a class="nav-link" 
                href="{% url 'add_dropdown' %}">
               <i class="ni ni-ambulance text-info"></i>
@@ -270,6 +281,80 @@
       </div>
     </div>
   </div>
+  <!-- ========================= -->
+<!--       UPLOAD MODAL        -->
+<!-- ========================= -->
+<div class="modal fade" id="uploadEgaspModal" tabindex="-1" aria-labelledby="uploadEgaspModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+
+      <div class="modal-header">
+        <h5 class="modal-title" id="uploadEgaspModalLabel">Upload EGASP CSV File</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <form method="POST" action="{% url 'upload_egasp' %}" enctype="multipart/form-data">
+        {% csrf_token %}
+      <div class="modal-body">
+        
+        <div class="mb-3">
+          <label class="form-label">Select CSV File:</label>
+          <input type="file" name="file" accept=".csv" class="form-control" required>
+        </div>
+
+        <p class="text-muted small">
+          Make sure your CSV follows the correct EGASP column format before uploading.
+        </p>
+
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+        <button type="submit" class="btn btn-primary btn-sm">Upload</button>
+      </div>
+
+      </form>
+
+    </div>
+  </div>
+</div>
+</form>
+
+<!-- Upload Antibiotics Modal -->
+<div class="modal fade" id="uploadAbxModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+
+      <div class="modal-header">
+        <h5 class="modal-title">Upload Antibiotic CSV File</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <form method="POST" action="{% url 'upload_antibiotic_entries' %}" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <div class="modal-body">
+          <label>Select Antibiotic CSV File:</label>
+          <input type="file" name="File_uploadAbx" accept=".csv" class="form-control" required>
+           
+
+          <p class="text-muted small">
+            Ensure your CSV includes <strong>ab_EgaspId</strong>, <strong>ab_Antibiotic</strong>, etc.
+          </p>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-info btn-sm">Upload</button>
+        </div>
+
+      </form>
+
+    </div>
+  </div>
+</div>
+
+
   <script>
     // FOR AGE VERIFIER BUTTON
     function age() {

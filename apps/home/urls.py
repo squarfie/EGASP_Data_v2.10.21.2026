@@ -57,7 +57,11 @@ urlpatterns = [
     path('delete_city/<int:id>/', views.delete_city, name='delete_city'),
     path('download_combined_table/', views.download_combined_table, name='download_combined_table'),
     path('download/', views.download_date_range_table, name='download_date_range_table'),
+    path('upload-egasp/', views.upload_egasp, name='upload_egasp'),
+    path('upload-antibiotic-entries/', views.upload_antibiotic_entries, name='upload_antibiotic_entries'),
     path('get-cities/', views.get_cities_by_province, name='get_cities_by_province'),
+    path('delete-all-egasp/', views.delete_all_egasp, name='delete_all_egasp'),
+
     # path("ajax/get-cities/", views.get_cities, name="get_cities"),
 
    

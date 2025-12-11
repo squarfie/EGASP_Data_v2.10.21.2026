@@ -507,7 +507,7 @@
                     {% if entry.ab_Disk_value or entry.ab_MIC_value or entry.ab_Retest_MICValue %}
                     <tr>
                         <!-- INITIAL AST -->
-                        <td colspan="2" style="text-align: center; ">
+                        <td colspan="2" style="text-align: left; padding-left: 15px; ">
                             {% if entry.ab_Disk_value  %}
                              <strong>{{ entry.ab_Abx }}:</strong> DISK: {{ entry.ab_Disk_value }} {{ entry.ab_Disk_RIS }} 
                             {% elif entry.ab_MIC_value %}
@@ -518,7 +518,7 @@
                         </td>
                     
                         <!-- INITIAL Alert MIC -->
-                        <td colspan="2" style="text-align: center;">
+                        <td colspan="2" style="text-align: left; padding-left: 15px;">
                             {% if entry.ab_Alert_val %}
                                 <strong>{{ entry.ab_Alert_val }}</strong>
                             {% else %}
@@ -527,7 +527,7 @@
                         </td>
                     
                         <!-- RETEST AST -->
-                        <td colspan="2" style="text-align: center;">
+                        <td colspan="2" style="text-align: left; padding-left: 15px;">
                             {% if entry.ab_Retest_MICValue %}
                                 <strong>{{ entry.ab_Retest_Abx }}:</strong> MIC: {{ entry.ab_Retest_MIC_operand | default:""}} {{ entry.ab_Retest_MICValue|floatformat:"-3" }} {{ entry.ab_Retest_MIC_RIS|default:"" }}
                             {% else %}
@@ -536,7 +536,7 @@
                         </td>
                     
                         <!-- RETEST Alert MIC -->
-                        <td colspan="2" style="text-align: center;">
+                        <td colspan="2" style="text-align: left; padding-left: 15px;">
                             {% if entry.ab_Retest_Alert_val %}
                                 <strong>{{ entry.ab_Retest_Alert_val }}</strong>
                             {% else %}

@@ -391,7 +391,7 @@ class Egasp_Data(models.Model):
     Symp_Other = models.CharField(max_length=100,blank=True,default="n/a")
     Outcome_Of_Follow_Up_Visit = models.CharField(max_length=100, choices=Outcome_Followup_Choice, default="")
     Prev_Test_Pos = models.CharField(max_length=100,choices=Common_Choices, default="")
-    Prev_Test_Pos_Date = models.CharField(max_length=100,blank=True, default="")
+    Prev_Test_Pos_Date = models.CharField(max_length=100,blank=True, null=True, default="")
     Result_Test_Cure_Initial = models.CharField(max_length=100, choices=Result_TestCure_Choice,default="")
     Result_Test_Cure_Followup = models.CharField(max_length=100,choices=Result_TestCure_Choice, default="" )
     NoTOC_Other_Test = models.CharField(max_length=100,blank=True, default="n/a")
@@ -522,7 +522,13 @@ class Egasp_Data(models.Model):
 class Meta:
     db_table ="Egasp_Data"
 
-    
+
+class Egasp_upload(models.Model):
+    File_uploadEgasp = models.FileField(upload_to='uploads/egasp/', null=True, blank=True) 
+
+class Meta:
+    db_table = "Egasp_upload"
+
 
 # for specific indexing use this to enable fast search
     indexes = [
@@ -602,7 +608,7 @@ class AntibioticEntry(models.Model):
     ab_Disk_value = models.IntegerField(blank=True, null=True)
     ab_Disk_RIS = models.CharField(max_length=4, blank=True)
     ab_MIC_operand=models.CharField(max_length=4, blank=True, null=True, default="")
-    ab_MIC_value = models.DecimalField(max_digits=5, decimal_places=3, blank=True, null=True)
+    ab_MIC_value = models.DecimalField(max_digits=8, decimal_places=3, blank=True, null=True)
     ab_MIC_RIS = models.CharField(max_length=4, blank=True)
     ab_AlertMIC = models.BooleanField(default=False)
     ab_Alert_val = models.CharField(max_length=30, blank=True, null=True, default="")
@@ -641,6 +647,10 @@ class AntibioticEntry(models.Model):
     class Meta:
         db_table = "AntibioticEntry"
 
+class Upload_AntibioticEntry(models.Model):
+    File_uploadAbx = models.FileField(upload_to='uploads/antibiotic_entries/', null=True, blank=True)
+    class Meta:
+        db_table = "Upload_AntibioticEntry"
 
 class SpecimenTypeModel(models.Model):
     Specimen_name = models.CharField(max_length=100, blank=True, null=True)

@@ -35,9 +35,17 @@
      
           <div class="col-lg-6 col-5 text-right">
             <a class="btn btn-sm btn-neutral" href="{% url 'crf_data' %}">Add New</a>
+
             <a class="btn btn-sm btn-neutral" href="{% url 'abxentry_view' %}">Antibiotic Results</a>
+                          <!-- DELETE ALL BUTTON -->
+<!-- <button class="btn btn-sm btn-danger"
+        data-toggle="modal"
+        data-target="#deleteAllModal">
+    <i class="fa fa-trash"></i> Delete All
+</button> -->
+
           </div>
-      
+
         </div>
       </div>
     </div>
@@ -350,13 +358,59 @@
           <button type="button" class="btn btn-danger" id="confirmDelete">
             <i class="fa fa-trash mr-1"></i>Delete Record
           </button>
+
         </div>
       </form>
     </div>
   </div>
 </div>
 
-</form>
+
+
+<!-- Delete All EGASP Modal -->
+<!-- Delete All EGASP Modal -->
+<div class="modal fade" id="deleteAllModal" tabindex="-1" role="dialog" aria-labelledby="deleteAllModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title" id="deleteAllModalLabel">
+          <i class="fa fa-exclamation-triangle mr-2"></i>Delete All Records
+        </h5>
+        <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+
+      <form method="POST" action="{% url 'delete_all_egasp' %}">
+        {% csrf_token %}
+        
+        <div class="modal-body text-center py-4">
+          <i class="fa fa-trash text-danger" style="font-size: 3.5rem;"></i>
+          <h4 class="mt-3">Are you absolutely sure?</h4>
+          <p class="text-muted">
+            This will permanently delete <strong>all EGASP entries</strong>.<br>
+            This action <u>cannot</u> be undone.
+          </p>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">
+            <i class="fas fa-times mr-1"></i>Cancel
+          </button>
+
+          <button type="submit" class="btn btn-danger btn-sm">
+            <i class="fa fa-trash mr-1"></i>Delete All
+          </button>
+        </div>
+      </form>
+
+    </div>
+  </div>
+</div>
+
+
+
          </div>
         <!-- Card Footer with Pagination -->
     <div class="card-footer py-4 bg-white">
