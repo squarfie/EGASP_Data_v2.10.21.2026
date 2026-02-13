@@ -34,15 +34,19 @@
           </div>
      
           <div class="col-lg-6 col-5 text-right">
+            
+            <button class="btn btn-sm btn-success" onclick="history.back()">
+              <i class="fas fa-arrow-left mr-1"></i>Back
+            </button>
             <a class="btn btn-sm btn-neutral" href="{% url 'crf_data' %}">Add New</a>
 
             <a class="btn btn-sm btn-neutral" href="{% url 'abxentry_view' %}">Antibiotic Results</a>
                           <!-- DELETE ALL BUTTON -->
-<!-- <button class="btn btn-sm btn-danger"
-        data-toggle="modal"
-        data-target="#deleteAllModal">
-    <i class="fa fa-trash"></i> Delete All
-</button> -->
+            <button class="btn btn-sm btn-danger"
+                    data-toggle="modal"
+                    data-target="#deleteAllModal">
+                <i class="fa fa-trash"></i> Delete All
+            </button>
 
           </div>
 
@@ -71,18 +75,54 @@
                     </form>
 
                     <!-- Search Form (Right-Aligned) -->
-                    <form id="search-input" class="navbar-search navbar-search-light d-flex align-items-center" 
-                          onsubmit="return false;">
-                      <div class="input-group input-group-alternative input-group-merge">
-                        <div class="input-group-prepend">
-                          <span class="input-group-text"><i class="fas fa-search"></i></span>
+                      <form id="search-input"
+                            class="navbar-search navbar-search-light d-flex align-items-center"
+                            method="get"
+                            action="{% url 'show_data' %}">
+
+                        <div class="input-group input-group-alternative input-group-merge">
+                          <div class="input-group-prepend">
+                            <span class="input-group-text">
+                              <i class="fas fa-search"></i>
+                            </span>
+                          </div>
+
+                          <input name="q"
+                                value="{{ search_query }}"
+                                class="form-control"
+                                placeholder="Search EGASP ID"
+                                type="text">
+
+                          <div class="input-group-append">
+
+                            <button class="btn"
+                                    type="submit"
+                                    style="background:#e8f5f7; border:none; color:#1a7a8e;">
+                              <i class="fas fa-search"></i>
+                            </button>
+
+                            {% if search_query %}
+                            <a href="{% url 'show_data' %}"
+                              class="btn"
+                              style="background:#e8f5f7; border:none; color:#1a7a8e;"
+                              title="Clear search">
+                              <i class="fas fa-times"></i>
+                            </a>
+                            {% endif %}
+
+                          </div>
                         </div>
-                        <input class="form-control" placeholder="Search" type="text" onkeyup="searchTable()">
-                      </div>
-                      <button type="button" class="close" data-action="search-close" data-target="#navbar-search-main" aria-label="Close">
-                                    <span aria-hidden="true">x</span>
-                      </button>      
-                    </form>
+
+                        <button type="button"
+                                class="close"
+                                data-action="search-close"
+                                data-target="#navbar-search-main"
+                                aria-label="Close">
+                          <span aria-hidden="true">&times;</span>
+                        </button>
+
+                      </form>
+
 
                   </div>
                 </div>
@@ -130,7 +170,7 @@
                      <th>
                       <a href="?sort=Date_of_Entry&order={% if current_sort == 'Date_of_Entry' and current_order == 'asc' %}desc{% else %}asc{% endif %}">
                         Date Modified
-                        {% if current_sort == 'Date_of_Entry' %}
+                        {% if current_sort == 'Date_Modified' %}
                           {% if current_order == 'asc' %}▲{% else %}▼{% endif %}
                         {% endif %}
                       </a>
@@ -163,7 +203,7 @@
                       Specimen Type: &nbsp; <strong>{{isolate.Specimen_Type}}</strong><br>
                       Specimen Quality: &nbsp; <strong>{{isolate.Specimen_Quality}}</strong>
                   </td>
-                  <td>{{isolate.Date_of_Entry|date:"F, d, Y" }}</td>
+                  <td>{{isolate.Date_Modified|date:"F, d, Y" }}</td>
                   
                   <!-- <td>
                     {% for antibiotic_entry in isolate.antibiotic_entries.all %}

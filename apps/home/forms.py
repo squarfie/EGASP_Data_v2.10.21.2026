@@ -48,6 +48,15 @@ class egasp_Form(forms.ModelForm):
              required=False,
         )
 
+        ars_dmu_encoder = forms.ModelChoiceField(
+             queryset=Clinic_Staff_Details.objects.all(),
+             to_field_name='ClinStaff_Name',
+             widget=forms.Select(attrs={'class': "form-select fw-bold", 'style': 'max-width: auto;'}),
+             empty_label="",
+             required=False,
+        )
+
+
         Specimen_Code = forms.ModelChoiceField(
             queryset=SpecimenTypeModel.objects.all(),
             to_field_name='Specimen_code',  # Specify the field you want as the value
@@ -107,6 +116,7 @@ class egasp_Form(forms.ModelForm):
             'Date_Of_Gram_Stain' : forms.DateInput(attrs={'class': 'form-control', 'type': 'date', 'placeholder': 'MM/DD/YYYY'}),
             'GS_Date_Released' : forms.DateInput(attrs={'class': 'form-control', 'type': 'date', 'placeholder': 'MM/DD/YYYY'}),
             'Date_Received_in_lab' :forms.DateInput(attrs={'class': 'form-control', 'type': 'date', 'placeholder': 'MM/DD/YYYY'}),
+            'Date_Received_DMU' :forms.DateInput(attrs={'class': 'form-control', 'type': 'date', 'placeholder': 'MM/DD/YYYY'}),
             'Positive_Culture_Date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date', 'placeholder': 'MM/DD/YYYY'}),
             'Susceptibility_Testing_Date' :forms.DateInput(attrs={'class': 'form-control', 'type': 'date', 'placeholder': 'MM/DD/YYYY'}),
             'NoTOC_DatePerformed' :forms.DateInput(attrs={'class': 'form-control', 'type': 'date', 'placeholder': 'MM/DD/YYYY'}),
@@ -200,13 +210,16 @@ class egasp_Form(forms.ModelForm):
             # Add more fields as needed
             }
         
-
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            distinct_ptid = ClinicData.objects.values_list('PTIDCode', flat=True).distinct()
+            self.fields['PTIDCode'].choices = [(code, code) for code in distinct_ptid]
 
         def __init__(self, *args, **kwargs):
             super(egasp_Form, self).__init__(*args, **kwargs)
             self.fields['Clinic_Code'].widget.attrs['readonly'] = True  # Make Clinic_Code read-only
             self.fields['ClinicCodeGen'].widget.attrs['readonly'] = True  # Make Clinic_Code read-only
-            self.fields['Clinic'].widget.attrs['readonly'] = True  # Make Clinic read-only
+            # self.fields['Clinic'].widget.attrs['readonly'] = True  # Make Clinic read-only
             self.fields['Egasp_Id'].widget.attrs['readonly'] = True  # Make Egasp_Id read-only
             # self.fields['Growth_span'].widget = forms.HiddenInput()
             self.fields['Clinic_Code'].widget = forms.HiddenInput()
@@ -216,7 +229,7 @@ class egasp_Form(forms.ModelForm):
             self.fields['Laboratory_Staff'].widget.attrs.update({'class': 'form-control'})
             self.fields['Validator_Pers'].queryset = Clinic_Staff_Details.objects.all()
             self.fields['Validator_Pers'].widget.attrs.update({'class': 'form-control'})
-
+            
             # choice fields str set to required = False to prevent an error during saving after edit 
             # error occurs because none=yes makes some fields non editable.
             self.fields['Specimen_Quality'].required = False
@@ -388,6 +401,7 @@ class egasp_Form(forms.ModelForm):
                         self.fields['Permanent_City_fk'].queryset = City.objects.filter(province=prov)
                 else:
                     self.fields['Permanent_City_fk'].queryset = City.objects.none()
+        
 
 class EgaspUploadForm(forms.ModelForm):
     class Meta:

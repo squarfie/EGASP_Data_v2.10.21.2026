@@ -211,7 +211,11 @@
             <td colspan="2"><strong>3.4 Date of Last sex:</strong> </td>
             <td colspan="2">{{isolate.Date_of_Last_Sex}}</td>
             <td colspan="2"> <strong>3.5 Relationship to partner/s:</strong></td>
-            <td colspan="2">{{isolate.Relationship_to_Partners}}</td>
+            <td colspan="2">{{isolate.Relationship_to_Partners}}
+                {% if isolate.Other_Relationship and isolate.Other_Relationship|lower != "n/a" %}
+                and {{ isolate.Other_Relationship}}
+                {%endif%}
+            </td>
         </tr>
         <tr style="border-top: 1px solid gray;">
             <td colspan="4"><strong>3.6 Type of Exposure:</strong> </td>
@@ -304,7 +308,7 @@
         <tr>
             <td colspan="2">&nbsp;&nbsp;&nbsp;&nbsp;<strong style="font-size: 8px;">Rectal Pain:</strong>&nbsp;{{isolate.Symp_Rectal_Pain}}</td>
             <td colspan="2"><strong style="font-size: 8px;">Painful Intercourse:</strong>&nbsp;{{isolate.Symp_Painful_Intercourse}}</td>
-            <td colspan="2"><strong style="font-size: 8px;">Other:</strong>&nbsp;{{isolate.Other}}</td>
+            <td colspan="2"><strong style="font-size: 8px;">Other:</strong>&nbsp;{{isolate.Symp_Other}}</td>
         </tr>
         <tr style="border-top: 1px solid gray;" >
             <td colspan="3" style="font-size: 8px;"><strong>4.3 Previously tested positive for gonorrhea:</strong> {{isolate.Prev_Test_Pos}}</td>

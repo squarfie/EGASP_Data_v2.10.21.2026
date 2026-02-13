@@ -98,6 +98,22 @@ DATABASES = {
     }
 }
 
+
+# Database Settings when running in ubuntu server
+# Database
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': config('DB_NAME', default='egasp'),
+#         'USER': config('DB_USER', default='arsp'),
+#         'PASSWORD': config('DB_PASSWORD', default=''),
+#         'HOST': config('DB_HOST', default='localhost'),
+#         'PORT': config('DB_PORT', default='5432'),
+# 	'CONN_MAX_AGE': 600,  # 10 minutes
+#     }
+# }
+
+
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -170,15 +186,19 @@ SOCIALACCOUNT_AUTO_SIGNUP = True
 
 # New allauth settings (Django 5+)
 ACCOUNT_LOGIN_METHODS = {"email"}
+ACCOUNT_LOGIN_METHODS = {"email"}
+ACCOUNT_USERNAME_REQUIRED = False # ← ADD THIS
+ACCOUNT_USER_MODEL_USERNAME_FIELD = None
+
+ACCOUNT_AUTHENTICATION_METHOD = "email"   # ← add
+ACCOUNT_EMAIL_REQUIRED = True             # ← add 
+
 
 ACCOUNT_SIGNUP_FIELDS = [
     "email*",
     "password1*",
     "password2*",
 ]
-
-ACCOUNT_USER_MODEL_USERNAME_FIELD = None
-
 
 # Do NOT require email verification for Google (optional)
 ACCOUNT_EMAIL_VERIFICATION = "none"

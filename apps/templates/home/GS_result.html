@@ -105,7 +105,8 @@
             {%if isolate.GS_Pus_Cells and isolate.GS_Pus_Cells|lower != "n/a" and isolate.GS_Pus_Cells|lower != "none"%}{{isolate.GS_Pus_Cells}}{%endif%}
         </td></tr>
         <tr><td colspan="4"><strong>Epithelial Cells:</strong></td>  <td colspan="4" style="text-decoration: underline;">
-            {%if isolate.Ephithelial_Cells and isolate.Ephithelial_Cells|lower != "n/a" and isolate.Ephithelial_Cells|lower != "none"%} {{isolate.Epithelial_Cells}} {%endif%}
+        {%if isolate.Ephithelial_Cells and isolate.Epithelial_Cells != "" and isolate.Ephithelial_Cells|lower != "n/a" and isolate.Ephithelial_Cells|lower != "none"%}{{isolate.Epithelial_Cells}}{%endif%}
+         <!-- {{isolate.Epithelial_Cells}} -->
         </td></tr>
         <tr><td colspan="4"><strong>Gram Negative Intracellular Diplococci:</strong></td> <td colspan="4" style="text-decoration: underline;">
         {%if isolate.Gram_Neg_Intracellular and isolate.Gram_Neg_Intracellular|lower != "n/a" and isolate.Gram_Neg_Intracellular|lower != "none" %} {{isolate.Gram_Neg_Intracellular}} {%endif%}
@@ -173,8 +174,7 @@
                         <td style="text-align: center;border: 1px solid gray;">{{ entry.ab_MIC_RIS |default:"-"}}</td>
                         {% endif %}
                       
-                    </tr>
-                 
+                    </tr>     
                     {% endif %}
                 {% endfor %}
                 </tbody>
@@ -223,7 +223,7 @@
         <br>
         <tbody>
         <tr>
-            <td colspan="2" style="text-align: center;">{{isolate.Date_Released}}</td>
+            <td colspan="2" style="text-align: center;">{% if isolate.Date_Released and isolate.Date_Released|lower != "none" %}{{isolate.Date_Released}}</td>{%endif%}
             <td style="text-align: center;" colspan="2" >
                 <strong class="signature-name"><br><br>Jaywardeen P. Abad, RMT</strong><br>
                 <span style="font-size: 10px;">License Number: 0042797</span> <br>

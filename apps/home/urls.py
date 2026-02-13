@@ -20,6 +20,7 @@ urlpatterns = [
     path('clinic-add/', views.add_dropdown,name='add_dropdown'),
     path('clinic-view', views.clinic_view,name='clinic_view'),
     path('clinic-delete/<int:id>/',views.delete_dropdown,name='delete_dropdown'),
+    path("clinic/edit/<int:pk>/", views.add_dropdown, name="edit_clinic"),
     path("search/", views.search, name="search"),
     path('clinic-code/', views.get_clinic_code, name='get_clinic_code'),
     path('breakpoints-view/', views.breakpoints_view, name='breakpoints_view'),

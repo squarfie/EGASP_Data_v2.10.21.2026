@@ -176,10 +176,14 @@ label.form-control-label{
                   </div>
                 </div>
               <div class="col-5 text-right">
+              <button class="btn btn-sm btn-success" onclick="history.back()">
+              <i class="fas fa-arrow-left mr-1"></i>Back
+            </button>
                 <a href="{% url 'crf_data' %}" class="btn btn-sm btn-primary">Add New</a>
                 <button type="submit" class="btn btn-sm btn-primary">Save</button>
                 <a href="{% url 'show_data' %}" class="btn btn-sm btn-primary">View / Print</a>  
                 <a href="{% url 'add_breakpoints' %}" class="btn btn-warning btn-sm">Breakpoints</a>
+
               </div>
               </div>
            
@@ -457,9 +461,9 @@ label.form-control-label{
                     <label class='form-control-label' for='Nationality_Sex_Partner'>Nationality of most recent sex partner</label> {{form.Nationality_Sex_Partner | append_attr:"class: form-control"|append_attr:"tabindex:34" }}
                   </div>
                 </div>
-                <div class="col-lg-4">
+                <div class="col-lg-3">
                   <div class="form-group">
-                    <label class='form-control-label' for='Nationality_Sex_Partner_Other'>Other Nationality of most recent sex partner (Please specify)</label> {{form.Nationality_Sex_Partner_Other  | append_attr:"class: form-control"|append_attr:"tabindex:35" }}
+                    <label class='form-control-label' for='Nationality_Sex_Partner_Other'><span style="font-size: 11px;">Other Nationality of most recent sex partner (Please specify)</span></label> {{form.Nationality_Sex_Partner_Other  | append_attr:"class: form-control"|append_attr:"tabindex:35" }}
                   </div>
                 </div>
                 <div class="col-lg-2">
@@ -467,9 +471,14 @@ label.form-control-label{
                     <label class='form-control-label' for='Date_of_Last_Sex'>Date of Last Sex</label> {{form.Date_of_Last_Sex | append_attr:"class: form-control"|append_attr:"tabindex:36" }}
                   </div>
                 </div>
-                <div class="col-lg-3">
+                <div class="col-lg-2">
                   <div class="form-group">
                     <label class='form-control-label' for='Relationship_to_Partners'>Relationship to Partner/s</label> {{form.Relationship_to_Partners| append_attr:"class: form-control"|append_attr:"tabindex:37" }}
+                  </div>
+                </div>
+                <div class="col-lg-2">
+                  <div class="form-group">
+                    <label class='form-control-label' for='Other_Relationship'>Other</label> {{form.Other_Relationship| append_attr:"class: form-control"|append_attr:"tabindex:37" }}
                   </div>
                 </div>
               </div>
@@ -808,11 +817,12 @@ label.form-control-label{
                           <label class='form-control-label' for='Symp_Painful_Intercourse'>Painful Intercourse</label> {{form.Symp_Painful_Intercourse| append_attr:"class: form-control"|append_attr:"tabindex:84" }}
                         </div>
                         </div>
-                        <div class="col-lg-6">
+                        <div class="col-lg-3">
                           <div class="form-group">
                             <label class='form-control-label' for='Symp_Other'>Other Symptoms</label> {{form.Symp_Other| append_attr:"class: form-control"|append_attr:"tabindex:85" }}
                           </div>
                         </div>
+                        
                       </div>
                       </div>
                     </div>
@@ -998,6 +1008,29 @@ label.form-control-label{
                       </div>
                     </div>
                   </div>
+
+                   <h6 class="heading-small mb-0" style="padding-bottom: 0; margin-bottom: 0;">ARSRL DATA MANAGEMENT UNIT </h6>
+                      <hr class="border border-primary border-3 opacity-75 " style="margin-top: 0; padding-top: 0%;">
+                     <div class="pl-lg-12">
+                    <div class="row">
+                      <div class="col-lg-6">
+                        <div class="form-group">
+                          <label class='form-control-label' for='ars_dmu_encoder'>DMU Encoder</label> 
+                          <div class="d-flex align-items-center">{{form.ars_dmu_encoder| append_attr:"class: form-control"|append_attr:"tabindex:105" }}
+                            <span><a href="{% url 'add_clin_pers' %}" class="col-4 shortcut-item" style="padding: 0;">
+                              <span class="ni ni-settings" style="margin-left: 10px; line-height: 0; vertical-align: text-bottom;"></span>
+                              </a></span>
+                          </div>
+                        </div>
+                      </div>
+                  <div class="col-lg-6">
+                      <div class="form-group">
+                        <label class='form-control-label' for='Date_Received_DMU'>Date received in DMU</label> {{form.Date_Received_DMU| append_attr:"class: form-control"|append_attr:"tabindex:127" }}
+                      </div>
+                  </div>
+                  
+                    </div>
+                   </div>
 
                 </div> 
                 <!-- end of first tab -->
@@ -1812,6 +1845,8 @@ label.form-control-label{
       }
     }
 
+
+
     // --- Auto fill ars_contact and ars_email when staff is selected ---
     $('#id_Laboratory_Staff').change(function () {
       const labStaffId = $(this).val();
@@ -1907,6 +1942,10 @@ label.form-control-label{
 
 
 
+
+
+
+
 <script>
   // grouping of cities by province
 $(function () {
@@ -1972,9 +2011,6 @@ $(function () {
   handleCountryChange($permCountry, $permProv, $permCity, permProvOptions);
 });
 </script>
-
-
-
 
 
 

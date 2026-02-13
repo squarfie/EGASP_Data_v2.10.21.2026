@@ -119,6 +119,7 @@ class Egasp_Data(models.Model):
         ('Filipino', 'Filipino'),
         ('Filipino and', 'Filipino and'),
         ('No Answer', 'No Answer'),
+        ('Other', 'Other')
     )
     Relationship_to_partnerChoice=(
         ('n/a','n/a'),
@@ -153,6 +154,7 @@ class Egasp_Data(models.Model):
         ('Negative','Negative'),
         ('No TOC Performed', 'No TOC Performed'),
         ('No Answer', 'No Answer'),
+        ('No follow-up visit', 'No Follow-up visit'),
         ('N/A', 'N/A')
     )
     NoTOC_ResultofTest=(
@@ -282,7 +284,8 @@ class Egasp_Data(models.Model):
         ('Other','Other'),
     )
     # DEMOGRAPHIC DATA
-    Date_of_Entry =models.DateTimeField(auto_now=True)
+    Date_of_Entry =models.DateTimeField(auto_now_add=True)
+    Date_Modified =models.DateTimeField(auto_now=True)
     ID_Number = models.CharField(max_length=100, blank=True, default="")
     Egasp_Id = models.CharField(max_length=25,blank=True, unique=True )
     PTIDCode = models.CharField(max_length=100, blank=True)
@@ -336,6 +339,7 @@ class Egasp_Data(models.Model):
     Nationality_Sex_Partner_Other = models.CharField(max_length=100,blank=True,default="n/a")
     Number_Of_Sex_Partners= models.CharField(max_length=100,blank=True,)
     Relationship_to_Partners = models.CharField(max_length=100, choices=Relationship_to_partnerChoice, default="")
+    Other_Relationship = models.CharField(max_length=100, choices=Relationship_to_partnerChoice, default="")
     SB_Urethral = models.CharField(max_length=100, choices=Common_Choices, default="")
     SB_Vaginal = models.CharField(max_length=100, choices=Common_Choices, default="")
     SB_Anal_Insertive = models.CharField(max_length=100, choices=Common_Choices, default="")
@@ -453,6 +457,7 @@ class Egasp_Data(models.Model):
     Gs_NoGram_neg_diplococcus=models.CharField(max_length=100,choices=Common_Choices, default="")
     Gs_Not_performed=models.CharField(max_length=100, choices=Common_Choices, default="")
     Date_Received_in_lab = models.DateField( null= True,  blank=True, )
+    Date_Received_DMU = models.DateField(blank=True, null=True)
     Positive_Culture_Date = models.DateField(null= True, blank=True, )
     Culture_Result = models.CharField(max_length=100, choices=CultureResult_Choice, default="n/a")
     Growth = models.CharField(max_length=100,blank=True,)
@@ -479,14 +484,15 @@ class Egasp_Data(models.Model):
     #laboratory personnel
     Laboratory_Staff = models.CharField(max_length=100,blank=True, null=True,)
     Date_Accomplished_ARSP=models.DateField(blank=True, null=True)
+    ars_dmu_encoder = models.CharField(max_length=100, blank=True, null=True)
     ars_notes = models.TextField(blank=True, max_length=255, null=True)
-    ars_contact = models.CharField(max_length=27, blank=True, null=True)
+    ars_contact = models.CharField(max_length=100, blank=True, null=True)
     ars_email = models.EmailField(blank=True, null=True, validators=[EmailValidator()])
     ars_license = models.CharField(max_length=100,blank=True, null=True, default="")
     ars_designation = models.CharField(max_length=100,blank=True, null=True, default="")
     Validator_Pers = models.CharField(max_length=100,blank=True, null=True,)
     Date_Validated_ARSP=models.DateField(blank=True, null=True)
-    val_contact = models.CharField(max_length=27,blank=True, null=True)
+    val_contact = models.CharField(max_length=100,blank=True, null=True)
     val_email = models.EmailField(blank=True, null=True, validators=[EmailValidator()])
     val_license = models.CharField(max_length=100,blank=True, null=True, default="")
     val_designation =  models.CharField(max_length=100,blank=True, null=True, default="")
@@ -516,7 +522,13 @@ class Egasp_Data(models.Model):
             self.Permanent_Province = self.Permanent_Province_fk.provincename
         if self.Permanent_City_fk:
             self.Permanent_City = self.Permanent_City_fk.cityname
-
+        if self.First_Name:
+            self.First_Name = self.First_Name.upper()
+        if self.Middle_Name:
+            self.Middle_Name = self.Middle_Name.upper()
+        if self.Last_Name:
+            self.Last_Name = self.Last_Name.upper()
+        
         super().save(*args, **kwargs)
 
 class Meta:
@@ -541,16 +553,17 @@ class Meta:
 
 
 class ClinicData(models.Model):
-    PTIDCode=models.CharField(max_length=2, blank=True, unique=True)
+    PTIDCode=models.CharField(max_length=2, blank=True )
     ClinicCode=models.CharField(max_length=3, blank=True)
-    ClinicName=models.CharField(max_length=155, blank=True)
+    ClinicName=models.CharField(max_length=155, blank=True, unique=True)
     def __str__(self):
         return self.PTIDCode  
     
 class Meta:
     db_table ="ClinicData"
 
-
+class Meta:
+    unique_together = ("PTIDCode", "ClinicName")
 
 class BreakpointsTable(models.Model):
     TestMethodChoices =(
@@ -651,6 +664,7 @@ class Upload_AntibioticEntry(models.Model):
     File_uploadAbx = models.FileField(upload_to='uploads/antibiotic_entries/', null=True, blank=True)
     class Meta:
         db_table = "Upload_AntibioticEntry"
+
 
 class SpecimenTypeModel(models.Model):
     Specimen_name = models.CharField(max_length=100, blank=True, null=True)
