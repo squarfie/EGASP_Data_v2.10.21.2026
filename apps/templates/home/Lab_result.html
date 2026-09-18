@@ -1,4 +1,5 @@
 {% load static %}
+{% load custom_filters %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -48,7 +49,7 @@
         padding-left: 3.5px;
     }
     th{
-        padding-top: 1.5px;
+        padding-top: 1.2px;
         text-align: center; border: 0;
         
     }
@@ -319,6 +320,21 @@
             <td colspan="4" style="font-size: 8px;"> <strong>4.6 Result of Initial test of cure:</strong> {{isolate.Result_Test_Cure_Initial}}</td>
             <td colspan="4" style="font-size: 8px;"> <strong>4.7 Result of Follow-up test of cure:</strong> {{isolate.Result_Test_Cure_Followup}}</td>
         </tr>
+        <tr style="border-top: 1px solid gray;">
+            <td colspan="3" style="font-size: 8px;"> <strong>4.8 if culture test not done, specify test performed:</strong>  {{isolate.NoTOC_Other_Test}} </td>
+            <td colspan="2" style="font-size: 8px;"> <strong>4.9 Date Performed:</strong>  {{isolate.NoTOC_DatePerformed}} </td>
+            <td colspan="3" style="font-size: 8px;"> <strong>4.10 Result:</strong>  {{isolate.NoTOC_Result_of_Test}} </td>
+        </tr>
+        <tr>
+            <td colspan="3" style="font-size: 8px;"> <strong>4.11 Patient Compliance to Antibiotic Treatment Prescribed:</strong>  {{isolate.Patient_Compliance_Antibiotics}} </td>
+            <td colspan="2" style="font-size: 8px;"> <strong>4.12 Drug:</strong>  {{isolate.OtherDrugs_Specify}} </td>
+            <td colspan="3" style="font-size: 8px;"> <strong>4.13 Dosage:</strong>  {{isolate.OtherDrugs_Dosage}} </td>
+           
+        </tr>
+        <tr>
+            <td colspan="4" style="font-size: 8px;"> <strong>4.14 Route:</strong>  {{isolate.OtherDrugs_Route}} </td>
+            <td colspan="4" style="font-size: 8px;"> <strong>4.15 Duration:</strong>  {{isolate.OtherDrugs_Duration}} </td>
+        </tr>
         <tr>
             <td class="gray-background " colspan="8" ><strong style="font-size: 10.5px;">5. TREATMENT INFORMATION</strong></td>  
         </tr>
@@ -339,31 +355,7 @@
             <td colspan="2">{{isolate.Secondary_Antibiotic}}</td>
             <td colspan="2">{{isolate.Secondary_Abx_Other}}</td>  
         </tr>
-        <tr>
-            <td class="gray-background " colspan="8" ><strong style="font-size: 10.5px;">6. CLINIC PERSONNEL PROVIDING INFORMATION</strong></td>  
-        </tr>
-        <tr>
-            <td colspan="2"><strong>6.1 Clinic Staff Name:</strong></td>
-            <td colspan="2">{{isolate.Clinic_Staff}}</td>
-            <td colspan="2"><strong>6.5 Requesting Physician:</strong></td>
-            <td colspan="2">{{isolate.Requesting_Physician}}</td>
-        </tr>
-        <tr>
-            <td colspan="2"><strong>6.2 Telephone/Cellphone No.:</strong></td>
-            <td colspan="2">{{isolate.Telephone_Number}}</td>
-            <td colspan="2"><strong>6.6. Date Requested:</strong></td>
-            <td colspan="2">{{isolate.Date_Requested_Clinic}}</td>
-        </tr>
-        <tr>
-            <td colspan="2"><strong>6.3 Email Address:</strong></td>
-            <td colspan="2">{{isolate.Email_Address}}</td>
-            <td colspan="2"><strong>6.7 Notes:</strong></td>
-            <td colspan="2">{{isolate.Notes}}</td>
-        </tr>
-        <tr>
-            <td colspan="2"><strong>6.4 Date Accomplished</strong></td>
-            <td colspan="2">{{isolated.Date_Accomplished}}</td>
-        </tr>
+
         </tbody>
         </table>
         <div class="page-break"></div>
@@ -393,21 +385,41 @@
                 <tr>
                     <th colspan="8" style="height: 30px; font-size: 14px;"><strong>ENHANCED GONOCOCCAL ANTIMICROBIAL SURVEILLANCE PROGRAM</strong></th>
                 </tr>
+         <tr>
+            <td class="gray-background" colspan="5" style="font-size: 10.5px; border-top: 1px solid gray;"><strong >6. CLINIC PERSONNEL PROVIDING INFORMATION</strong></td>
+             <td style="text-align: center; border-top: 1px solid gray;" colspan="3" rowspan="3"><h1 style="font-size: 17px">EGASP ID: {{isolate.Egasp_Id}}</h1></td>
+            
+        </tr>
+        <tr>
+            <td colspan="4"><strong>6.1 Clinic Staff Name: </strong> &nbsp;{{isolate.Clinic_Staff}}</td>
+
+        </tr>
+        <tr>
+            <td colspan="4"><strong>6.2 Telephone/Cellphone No.:</strong> {{isolate.Telephone_Number}}</td>
+        </tr>
+        <tr>
+            <td colspan="4"><strong>6.3 Email Address:</strong>&nbsp; {{isolate.Email_Address}}</td>
+            <td colspan="4"><strong>6.4 Date Accomplished:</strong>&nbsp;{{isolated.Date_Accomplished}} </td>
+        </tr>
+        <tr>
+            <td colspan="4"><strong>6.5 Requesting Physician:</strong>&nbsp;{{isolate.Requesting_Physician}} </td>
+            <td colspan="4"><strong>6.6. Date Requested:</strong>&nbsp;{{isolate.Date_Requested_Clinic}}</td>
+        </tr>
+        <tr>
+            <td colspan="8"><strong>6.7 Notes:</strong>&nbsp;{{isolate.Notes}}</td>
+        </tr>
+
                 <tr>
-                    <td class="gray-background" colspan="5" style="font-size: 10.5px; border-top: 1px solid gray;"><strong >7. SPECIMEN INFORMATION</strong></td>
-                    <td style="text-align: center; border-top: 1px solid gray;" colspan="3" rowspan="3"><h1 style="font-size: 17px">EGASP ID: {{isolate.Egasp_Id}}</h1></td>
+                    <td class="gray-background" colspan="8" style="font-size: 10.5px; border-top: 1px solid gray;"><strong >7. SPECIMEN INFORMATION</strong></td>
+                    <!-- <td style="text-align: center; border-top: 1px solid gray;" colspan="3" rowspan="3"><h1 style="font-size: 17px">EGASP ID: {{isolate.Egasp_Id}}</h1></td> -->
                 </tr>
                 <tr>
-                    <td colspan="2"><strong>7.1 Date of Specimen Collection:</strong></td>
-                    <td><strong>Specimen Code:</strong></td>
-                    <td><strong style="font-size: 9px;">7.2 Specimen Type:</strong></td>
-                    <td><strong style="font-size: 8px;">7.3 Specimen Quality:</strong></td>
+                    <td colspan="4"><strong>7.1 Date of Specimen Collection:</strong> &nbsp;{{isolate.Date_Specimen_Collection}}</td>
+                    <td colspan="4"><strong style="font-size: 9px;">7.3 Specimen Type:</strong> &nbsp;{{isolate.Specimen_Type}} </td>
                 </tr>
                 <tr>
-                    <td colspan="2" style="text-align: center;">{{isolate.Date_Specimen_Collection}}</td>
-                    <td>{{isolate.Specimen_Code}}</td>
-                    <td style="font-size: 9px;">{{isolate.Specimen_Type}}</td>
-                    <td style="text-align: right;">{{isolate.Specimen_Quality}}</td>
+                    <td colspan="4"><strong>7.2 Specimen Code: </strong>&nbsp;{{isolate.Specimen_Code}}</td>
+                    <td colspan="4"><strong style="font-size: 8px;">7.4 Specimen Quality:</strong> &nbsp;{{isolate.Specimen_Quality}}</td>
                 </tr>
                 <tr>
                     <td class="gray-background" colspan="8"><strong style="font-size: 10.5px;">8. GRAM STAIN</strong></td>
@@ -515,7 +527,7 @@
                             {% if entry.ab_Disk_value  %}
                              <strong>{{ entry.ab_Abx }}:</strong> DISK: {{ entry.ab_Disk_value }} {{ entry.ab_Disk_RIS }} 
                             {% elif entry.ab_MIC_value %}
-                             <strong>{{ entry.ab_Abx }}:</strong> MIC: {{ entry.ab_MIC_operand|default:" " }} {{ entry.ab_MIC_value|floatformat:"-3" }} {{ entry.ab_MIC_RIS|default:"" }}
+                             <strong>{{ entry.ab_Abx }}:</strong> MIC: {{ entry.ab_MIC_operand|default:" " }} {{ entry.ab_MIC_value|mic_format }} {{ entry.ab_MIC_RIS|default:"" }}
                             {% else %}
                                 &nbsp;
                             {% endif %}
@@ -533,7 +545,7 @@
                         <!-- RETEST AST -->
                         <td colspan="2" style="text-align: left; padding-left: 15px;">
                             {% if entry.ab_Retest_MICValue %}
-                                <strong>{{ entry.ab_Retest_Abx }}:</strong> MIC: {{ entry.ab_Retest_MIC_operand | default:""}} {{ entry.ab_Retest_MICValue|floatformat:"-3" }} {{ entry.ab_Retest_MIC_RIS|default:"" }}
+                                <strong>{{ entry.ab_Retest_Abx }}:</strong> MIC: {{ entry.ab_Retest_MIC_operand | default:""}} {{ entry.ab_Retest_MICValue|mic_format }} {{ entry.ab_Retest_MIC_RIS|default:"" }}
                             {% else %}
                                 &nbsp;
                             {% endif %}

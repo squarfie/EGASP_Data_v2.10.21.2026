@@ -1,4 +1,5 @@
 {% load static%}
+{% load custom_filters %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -105,8 +106,8 @@
             {%if isolate.GS_Pus_Cells and isolate.GS_Pus_Cells|lower != "n/a" and isolate.GS_Pus_Cells|lower != "none"%}{{isolate.GS_Pus_Cells}}{%endif%}
         </td></tr>
         <tr><td colspan="4"><strong>Epithelial Cells:</strong></td>  <td colspan="4" style="text-decoration: underline;">
-        {%if isolate.Ephithelial_Cells and isolate.Epithelial_Cells != "" and isolate.Ephithelial_Cells|lower != "n/a" and isolate.Ephithelial_Cells|lower != "none"%}{{isolate.Epithelial_Cells}}{%endif%}
-         <!-- {{isolate.Epithelial_Cells}} -->
+            <!-- {%if isolate.Ephithelial_Cells and isolate.Ephithelial_Cells|lower != "n/a" and isolate.Ephithelial_Cells|lower != "none"%} {{isolate.Epithelial_Cells}} {%endif%} -->
+            {{isolate.Epithelial_Cells}}
         </td></tr>
         <tr><td colspan="4"><strong>Gram Negative Intracellular Diplococci:</strong></td> <td colspan="4" style="text-decoration: underline;">
         {%if isolate.Gram_Neg_Intracellular and isolate.Gram_Neg_Intracellular|lower != "n/a" and isolate.Gram_Neg_Intracellular|lower != "none" %} {{isolate.Gram_Neg_Intracellular}} {%endif%}
@@ -144,8 +145,8 @@
                     {% else %}
                      <td colspan="6" style="text-align: left;"><u>No <i>Neisseria gonorrhoeae</i> isolated after {{ isolate.Growth|safe }} hrs. of incubation </u></td> <br>
                 </tr>
-                <tr><td colspan="2"></td><td colspan="6" style="text-align: left;"><u>{{isolate.Growth_span_other}}</u></td></tr>
-                {% endif %}
+                 {% endif %}
+                <tr><td colspan="2"></td><td colspan="6" style="text-align: left;"><u>{{isolate.Growth_span_other|default:""|safe}}</u></td></tr>
             </tbody>
     </table>
     <br>
@@ -155,7 +156,7 @@
                 <tr>
                     <th scope="col" style="border: 1px solid gray;">ANTIBIOTIC</th>
                     <th scope="col" style="border: 1px solid gray;">TEST METHOD</th>
-                    <th scope="col" style="border: 1px solid gray;">ANTIBIOTIC RESULT</th>
+                    <th scope="col" style="border: 1px solid gray;">AST RESULT (&micro;g/mL)</th>
                     <th scope="col" style="border: 1px solid gray;">INTERPRETATION</th>
                 </tr>
                 </thead>
@@ -169,14 +170,23 @@
                         <td style="text-align: center;border: 1px solid gray;">{{ entry.ab_Disk_value }}</td>
                         <td style="text-align: center;border: 1px solid gray;">{{ entry.ab_Disk_RIS }}</td>
                         {% else %}
-                        <td style="text-align: center;border: 1px solid gray;">MIC (ug/mL)</td>
-                        <td style="text-align: center;border: 1px solid gray;">{%if entry.ab_MIC_operand%}{{ entry.ab_MIC_operand }}{%endif%}{{ entry.ab_MIC_value|floatformat:"-3" }}</td>
-                        <td style="text-align: center;border: 1px solid gray;">{{ entry.ab_MIC_RIS |default:"-"}}</td>
+                        <td style="text-align: center;border: 1px solid gray;">Gradient E-test</td>
+                        <td style="text-align: center;border: 1px solid gray;">{%if entry.ab_MIC_operand%}{{ entry.ab_MIC_operand }}{%endif%} {{ entry.ab_MIC_value|mic_format }} &micro;g/mL </td>
+                        <td style="text-align: center;border: 1px solid gray;">{{ entry.ab_MIC_RIS |default:"-"}} </td>
+                        
                         {% endif %}
                       
-                    </tr>     
+                    </tr>
+
                     {% endif %}
+
                 {% endfor %}
+
+                        <tr>
+                        <td colspan="3" style="text-align: left; font-size: medium;"><i>*AST: Antmicrobial Susceptibility Test.</i></td>
+                        </tr>
+
+
                 </tbody>
             {% else %}
                 <thead>
@@ -197,9 +207,10 @@
                     <td></td>
                     <td></td>
                     <td></td>
-          
-            
+                    <td></td>
+        
                 </tr>
+
                 </tbody>
             {% endif %}
             </table>
@@ -223,7 +234,7 @@
         <br>
         <tbody>
         <tr>
-            <td colspan="2" style="text-align: center;">{% if isolate.Date_Released and isolate.Date_Released|lower != "none" %}{{isolate.Date_Released}}</td>{%endif%}
+            <td colspan="2" style="text-align: center;">{{isolate.Date_Released}}</td>
             <td style="text-align: center;" colspan="2" >
                 <strong class="signature-name"><br><br>Jaywardeen P. Abad, RMT</strong><br>
                 <span style="font-size: 10px;">License Number: 0042797</span> <br>

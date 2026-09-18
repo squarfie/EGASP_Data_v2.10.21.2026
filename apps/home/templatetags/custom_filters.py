@@ -51,3 +51,18 @@ def get_existing_value(existing_entries, entry_id, value_type):
 def multi_sort(queryset, fields):
     fields = fields.split(',')
     return sorted(queryset, key=attrgetter(*fields))
+
+
+
+@register.filter
+def mic_format(value):
+    try:
+        val = float(value)
+
+        if val > 0.25:
+            return f"{val:.1f}"   # 1 decimal place
+        else:
+            return f"{val:.3f}".rstrip('0').rstrip('.')  # clean trailing zeros
+
+    except (TypeError, ValueError):
+        return value

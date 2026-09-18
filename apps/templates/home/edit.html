@@ -130,6 +130,7 @@ label.form-control-label{
     <div class="col-xl-12 order-xl-1">
       <form method="POST" action="{% url 'edit_data' id=isolates.id %}" autocomplete="on" id="myform" >
         {% csrf_token %}
+        {% include 'includes/form_error_feedback.html' %}
       <div class="card" >
         <div class="card-header" id="mytop">
           <div class="row align-items-center">
@@ -1003,7 +1004,7 @@ label.form-control-label{
                       <div class="col-lg-6">
                         <div class="form-group">
                           <label class='form-control-label' for='ars_dmu_encoder'>DMU Encoder</label> 
-                          <div class="d-flex align-items-center">{{form.ars_dmu_encoder| append_attr:"class: form-control"|append_attr:"tabindex:105" }}
+                          <div class="d-flex align-items-center">{{form.ars_dmu_encoder| append_attr:"class: form-control"|append_attr:"tabindex:111" }}
                             <span><a href="{% url 'add_clin_pers' %}" class="col-4 shortcut-item" style="padding: 0;">
                               <span class="ni ni-settings" style="margin-left: 10px; line-height: 0; vertical-align: text-bottom;"></span>
                               </a></span>
@@ -1012,7 +1013,7 @@ label.form-control-label{
                       </div>
                   <div class="col-lg-6">
                       <div class="form-group">
-                        <label class='form-control-label' for='Date_Received_DMU'>Date received in DMU</label> {{form.Date_Received_DMU| append_attr:"class: form-control"|append_attr:"tabindex:127" }}
+                        <label class='form-control-label' for='Date_Received_DMU'>Date received in DMU</label> {{form.Date_Received_DMU| append_attr:"class: form-control"|append_attr:"tabindex:112" }}
                       </div>
                   </div>
                   
@@ -2137,5 +2138,4 @@ document.addEventListener("DOMContentLoaded", function () {
 </script> -->
 
 {% endblock javascripts %}
-
 

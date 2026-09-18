@@ -62,6 +62,8 @@ urlpatterns = [
     path('upload-antibiotic-entries/', views.upload_antibiotic_entries, name='upload_antibiotic_entries'),
     path('get-cities/', views.get_cities_by_province, name='get_cities_by_province'),
     path('delete-all-egasp/', views.delete_all_egasp, name='delete_all_egasp'),
+    path('edit_city/<int:id>/', views.edit_city, name='edit_city'),
+    path('check-egasp-id/', views.check_egasp_id, name='check_egasp_id'),
 
     # path("ajax/get-cities/", views.get_cities, name="get_cities"),
 

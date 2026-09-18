@@ -142,6 +142,7 @@ label.form-control-label{
     <div class="col-xl-12 order-xl-1">
       <form method="POST" action="{% url 'crf_data' %}" autocomplete="on" id="myform">
         {% csrf_token %}
+        {% include 'includes/form_error_feedback.html' %}
       <div class="card" >
         <div class="card-header" id="mytop">
           <div class="row align-items-center">
@@ -149,6 +150,13 @@ label.form-control-label{
                <h3 class="mb-0">SURVEILLANCE SITE INFORMATION </h3> 
             </div> -->
             <div class="col-12">
+              <div class="row">
+                <div class="col lg-4">
+                  <div class="form-group">
+                    <div id="egasp-warning" class="mb-2" style="text-align:left" ></div>
+                  </div>
+                </div>
+              </div>
               <div class="row">
                 <div class="col-lg-2">
                   <div class="form-group" >
@@ -167,6 +175,7 @@ label.form-control-label{
                   {{form.ID_Number| append_attr:"class: form-control " |append_attr:"tabindex:2"}} 
                   </div>
                 </div>
+
          
                 <div class="col-lg-2">
                   <div class="form-group">
@@ -176,6 +185,7 @@ label.form-control-label{
                   </div>
                 </div>
               <div class="col-5 text-right">
+                
               <button class="btn btn-sm btn-success" onclick="history.back()">
               <i class="fas fa-arrow-left mr-1"></i>Back
             </button>
@@ -186,7 +196,7 @@ label.form-control-label{
 
               </div>
               </div>
-           
+
 <br>
               
             <div class="row">
@@ -1016,7 +1026,7 @@ label.form-control-label{
                       <div class="col-lg-6">
                         <div class="form-group">
                           <label class='form-control-label' for='ars_dmu_encoder'>DMU Encoder</label> 
-                          <div class="d-flex align-items-center">{{form.ars_dmu_encoder| append_attr:"class: form-control"|append_attr:"tabindex:105" }}
+                          <div class="d-flex align-items-center">{{form.ars_dmu_encoder| append_attr:"class: form-control"|append_attr:"tabindex:111" }}
                             <span><a href="{% url 'add_clin_pers' %}" class="col-4 shortcut-item" style="padding: 0;">
                               <span class="ni ni-settings" style="margin-left: 10px; line-height: 0; vertical-align: text-bottom;"></span>
                               </a></span>
@@ -1025,7 +1035,7 @@ label.form-control-label{
                       </div>
                   <div class="col-lg-6">
                       <div class="form-group">
-                        <label class='form-control-label' for='Date_Received_DMU'>Date received in DMU</label> {{form.Date_Received_DMU| append_attr:"class: form-control"|append_attr:"tabindex:127" }}
+                        <label class='form-control-label' for='Date_Received_DMU'>Date received in DMU</label> {{form.Date_Received_DMU| append_attr:"class: form-control"|append_attr:"tabindex:112" }}
                       </div>
                   </div>
                   
@@ -1829,13 +1839,32 @@ label.form-control-label{
       generateClinicCodeGen(clinicCode, idNumber);
     });
 
+    // function generateEgaspId(ptidCode, idNumber) {
+    //   if (ptidCode && idNumber) {
+    //     $('#id_Egasp_Id').val(ptidCode + idNumber);
+    //   } else {
+    //     $('#id_Egasp_Id').val('');
+    //   }
+    // }
+
     function generateEgaspId(ptidCode, idNumber) {
-      if (ptidCode && idNumber) {
-        $('#id_Egasp_Id').val(ptidCode + idNumber);
-      } else {
+
+    if (ptidCode && idNumber) {
+
+        const generatedId = ptidCode + idNumber;
+
+        $('#id_Egasp_Id').val(generatedId);
+
+        // CHECK DATABASE
+        checkEgaspIdExists(generatedId);
+
+    } else {
+
         $('#id_Egasp_Id').val('');
-      }
+
+        $('#egasp-warning').html('');
     }
+}
 
     function generateClinicCodeGen(clinicCode, idNumber) {
       if (clinicCode && idNumber) {
@@ -2052,6 +2081,44 @@ $(function () {
   });
 </script>
 
+<script>
+  function checkEgaspIdExists(egaspId) {
+
+    if (!egaspId) {
+        $('#egasp-warning').html('');
+        return;
+    }
+
+    $.ajax({
+        url: "{% url 'check_egasp_id' %}",
+        data: {
+            egasp_id: egaspId
+        },
+        dataType: 'json',
+
+        success: function (data) {
+
+            if (data.exists) {
+
+                $('#egasp-warning').html(`
+                    <div class="alert alert-danger py-1 px-2 mb-2 text-left">
+                        <strong>Duplicate EGASP ID detected:</strong> The EGASP ID you entered already exists!
+                    </div>
+                `);
+
+            } else {
+
+                $('#egasp-warning').html(`
+                    <div class="alert alert-success py-1 px-2 mb-2 text-left">
+                        EGASP ID available.
+                    </div>
+                `);
+
+            }
+
+        }
+    });
+}
+</script>
 
 {% endblock javascripts %}
-

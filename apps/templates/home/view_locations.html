@@ -66,7 +66,7 @@
                            
                             <th>Province</th>
                             <th>City</th>
-                            <th>Actions</th>
+                            <th colspan="2">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -84,8 +84,17 @@
                                             {{ city.cityname }}
                                         {% endif %}
                                     </td>
-                                    <td><a href="#" class="text-danger delete-btn" data-toggle="modal" data-target="#deleteModal" data-url="{% url 'delete_city' city.id %}">
+                                    <td>
+                                    <a href="{% url 'edit_city' city.id %}" class="text-primary">
+                                        <i class="fa fa-pencil-square" aria-hidden="true"></i> &nbspEdit
+                                        </a>
+                                    </td>
+                                    <td>
+
+
+                                        <a href="#" class="text-danger delete-btn" data-toggle="modal" data-target="#deleteModal" data-url="{% url 'delete_city' city.id %}">
                                         <i class="fa fa-trash" aria-hidden="true"></i> &nbspDelete</a></td>
+
                                 </tr>
                             {% empty %}
                                 <tr>

@@ -1,0 +1,150 @@
+{% if form.errors %}
+  {{ form.errors.as_json|json_script:"form-errors-data" }}
+  <style>
+    #myform .is-invalid {
+      border-color: #fb6340 !important;
+      background-color: #fff5f3 !important;
+      box-shadow: 0 0 0 0.12rem rgba(251, 99, 64, 0.25);
+    }
+
+    #myform .egasp-field-error {
+      color: #f5365c;
+      display: block;
+      font-size: 11px;
+      font-weight: 600;
+      line-height: 1.3;
+      margin-top: 4px;
+    }
+
+    #myform .form-group.has-field-error label {
+      color: #f5365c;
+    }
+
+    #myform .egasp-error-summary-list {
+      list-style: none;
+      margin: 8px 0 0;
+      padding: 0;
+    }
+
+    #myform .egasp-error-summary-list li {
+      margin-top: 6px;
+    }
+  </style>
+  <div class="alert alert-danger py-2 px-3 mb-3" role="alert">
+    <strong>Unable to save.</strong> Please correct the field{% if form.errors|length > 1 %}s{% endif %} listed below.
+    <ul class="egasp-error-summary-list" id="egasp-error-summary"></ul>
+  </div>
+  {% if form.non_field_errors %}
+    <div class="alert alert-warning py-2 px-3 mb-3" role="alert">
+      {{ form.non_field_errors }}
+    </div>
+  {% endif %}
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const errorsScript = document.getElementById('form-errors-data');
+      const form = document.getElementById('myform');
+
+      if (!errorsScript || !form) return;
+
+      let errors = JSON.parse(errorsScript.textContent || '{}');
+      if (typeof errors === 'string') {
+        errors = JSON.parse(errors || '{}');
+      }
+      const summary = document.getElementById('egasp-error-summary');
+      let firstInvalidControl = null;
+
+      function getFieldLabel(control, fieldName) {
+        const fieldGroup = control.closest('.form-group');
+        const label = fieldGroup ? fieldGroup.querySelector('label') : null;
+        const labelText = label ? label.textContent.trim() : '';
+        return labelText || fieldName.replace(/_/g, ' ');
+      }
+
+      function showTabFor(control) {
+        const tabPane = control.closest('.tab-pane');
+        if (!tabPane || !tabPane.id) return;
+
+        const tabButton = document.querySelector('[href="#' + tabPane.id + '"], [data-target="#' + tabPane.id + '"]');
+        if (!tabButton) return;
+
+        if (window.jQuery && typeof window.jQuery(tabButton).tab === 'function') {
+          window.jQuery(tabButton).tab('show');
+        } else {
+          document.querySelectorAll('.tab-pane').forEach(function (pane) {
+            pane.classList.remove('show', 'active');
+          });
+          document.querySelectorAll('.nav-link').forEach(function (link) {
+            link.classList.remove('active');
+          });
+          tabPane.classList.add('show', 'active');
+          tabButton.classList.add('active');
+        }
+      }
+
+      function jumpToControl(control) {
+        showTabFor(control);
+        window.setTimeout(function () {
+          control.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          if (control.type !== 'hidden') {
+            control.focus({ preventScroll: true });
+          }
+        }, 150);
+      }
+
+      Object.keys(errors).forEach(function (fieldName) {
+        const controls = Array.from(form.elements).filter(function (control) {
+          return control.name === fieldName;
+        });
+
+        const messages = errors[fieldName].map(function (error) {
+          return error.message;
+        }).join(' ');
+
+        const visibleControl = controls.find(function (control) {
+          return control.type !== 'hidden';
+        });
+        const firstControl = visibleControl || controls[0] || null;
+        const fieldLabel = firstControl ? getFieldLabel(firstControl, fieldName) : fieldName.replace(/_/g, ' ');
+
+        if (summary) {
+          const item = document.createElement('li');
+          const text = document.createElement('span');
+          const labelText = document.createElement('strong');
+          labelText.textContent = fieldLabel + ':';
+          text.appendChild(labelText);
+          text.appendChild(document.createTextNode(' ' + messages));
+          item.appendChild(text);
+
+          summary.appendChild(item);
+        }
+
+        if (fieldName === '__all__' || !controls.length) return;
+
+        controls.forEach(function (control, index) {
+          control.classList.add('is-invalid');
+          control.setAttribute('aria-invalid', 'true');
+
+          const fieldGroup = control.closest('.form-group');
+          if (fieldGroup) fieldGroup.classList.add('has-field-error');
+
+          if (index > 0) return;
+
+          const errorMessage = document.createElement('small');
+          errorMessage.className = 'egasp-field-error';
+          errorMessage.textContent = messages;
+
+          const insertAfter = control.closest('.d-flex') || control.closest('.input-group') || control;
+          insertAfter.insertAdjacentElement('afterend', errorMessage);
+
+          if (!firstInvalidControl && control.type !== 'hidden') {
+            firstInvalidControl = control;
+          }
+        });
+      });
+
+      if (firstInvalidControl) {
+        jumpToControl(firstInvalidControl);
+      }
+    });
+  </script>
+{% endif %}
