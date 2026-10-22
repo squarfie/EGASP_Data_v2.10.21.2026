@@ -41,12 +41,14 @@
             <a class="btn btn-sm btn-neutral" href="{% url 'crf_data' %}">Add New</a>
 
             <a class="btn btn-sm btn-neutral" href="{% url 'abxentry_view' %}">Antibiotic Results</a>
+            {% if request.user.is_superuser or request.user.is_staff %}
                           <!-- DELETE ALL BUTTON -->
             <button class="btn btn-sm btn-danger"
                     data-toggle="modal"
                     data-target="#deleteAllModal">
                 <i class="fa fa-trash"></i> Delete All
             </button>
+            {% endif %}
 
           </div>
 
@@ -64,6 +66,7 @@
                 <div class="card-header border-0">
                   <div class="d-flex justify-content-between align-items-center flex-wrap">
                     
+                    {% if request.user.is_superuser or request.user.is_staff %}
                     <!-- Date Range Form (Left) -->
                     <form method="get" action="{% url 'download_date_range_table' %}" 
                           class="d-flex align-items-center flex-wrap gap-2 mb-2 mb-md-0">
@@ -73,6 +76,7 @@
                       <input type="date" name="to_date" class="form-control form-control-sm me-2" style="width: auto;" required>
                       &nbsp;<button type="submit" class="btn btn-sm btn-primary">Download CSV</button>
                     </form>
+                    {% endif %}
 
                     <!-- Search Form (Right-Aligned) -->
                       <form id="search-input"
@@ -407,7 +411,7 @@
 
 
 
-<!-- Delete All EGASP Modal -->
+{% if request.user.is_superuser or request.user.is_staff %}
 <!-- Delete All EGASP Modal -->
 <div class="modal fade" id="deleteAllModal" tabindex="-1" role="dialog" aria-labelledby="deleteAllModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered" role="document">
@@ -448,6 +452,7 @@
     </div>
   </div>
 </div>
+{% endif %}
 
 
 

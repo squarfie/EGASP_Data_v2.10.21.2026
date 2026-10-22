@@ -1,0 +1,159 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}Account Management{% endblock title %}
+
+{% block stylesheets %}
+<style>
+  .account-page .table td,
+  .account-page .table th {
+    vertical-align: middle;
+  }
+
+  .account-page .account-actions {
+    min-width: 210px;
+    white-space: nowrap;
+  }
+
+  .account-page .account-search {
+    max-width: 320px;
+  }
+</style>
+{% endblock stylesheets %}
+
+{% block content %}
+<div class="header bg-primary pb-6 pt-5 pt-md-7">
+  <div class="container-fluid">
+    <div class="header-body">
+      <div class="row align-items-center">
+        <div class="col">
+          <h1 class="h2 text-white mb-1">Account Management</h1>
+          <p class="text-white mb-0">Manage registered users and their access to EGASP.</p>
+        </div>
+        <div class="col-auto">
+          <a href="{% url 'register' %}" class="btn btn-sm btn-neutral">
+            <i class="fas fa-user-plus mr-1"></i> Register User
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container-fluid mt--5 account-page">
+  <div class="card shadow">
+    <div class="card-header border-0">
+      <div class="row align-items-center">
+        <div class="col">
+          <h3 class="mb-0">Registered Accounts</h3>
+        </div>
+        <div class="col-auto account-search">
+          <div class="input-group input-group-sm">
+            <div class="input-group-prepend">
+              <span class="input-group-text"><i class="fas fa-search"></i></span>
+            </div>
+            <input type="search" id="account-search" class="form-control" placeholder="Search accounts" aria-label="Search accounts">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="table-responsive">
+      <table class="table table-hover align-items-center mb-0" id="account-table">
+        <thead class="thead-light">
+          <tr>
+            <th>Username</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Status</th>
+            <th>Joined</th>
+            <th>Last Login</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for account in users %}
+          <tr>
+            <td class="font-weight-bold">{{ account.username }}</td>
+            <td>{{ account.get_full_name|default:"-" }}</td>
+            <td>{{ account.email|default:"-" }}</td>
+            <td>
+              {% if account.is_superuser %}
+                <span class="badge badge-danger">Superuser</span>
+              {% elif account.is_staff %}
+                <span class="badge badge-info">Admin</span>
+              {% else %}
+                <span class="badge badge-secondary">User</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if account.is_active %}
+                <span class="badge badge-success">Active</span>
+              {% else %}
+                <span class="badge badge-warning">Revoked</span>
+              {% endif %}
+            </td>
+            <td>{{ account.date_joined|date:"M d, Y" }}</td>
+            <td>{{ account.last_login|date:"M d, Y g:i A"|default:"Never" }}</td>
+            <td class="account-actions">
+              {% if account.is_superuser %}
+                <span class="text-muted small">Protected superuser</span>
+              {% elif account == request.user %}
+                <span class="text-muted small">Current account</span>
+              {% else %}
+                {% if account.is_active %}
+                <form method="post" action="{% url 'set_account_status' account.id %}" class="d-inline" onsubmit="return confirm('Revoke this registration? The user will no longer be able to log in.');">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="deactivate">
+                  <button type="submit" class="btn btn-sm btn-outline-warning" title="Revoke registration">
+                    <i class="fas fa-user-lock mr-1"></i> Revoke
+                  </button>
+                </form>
+                {% else %}
+                <form method="post" action="{% url 'set_account_status' account.id %}" class="d-inline" onsubmit="return confirm('Restore this registration?');">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="activate">
+                  <button type="submit" class="btn btn-sm btn-outline-success" title="Restore registration">
+                    <i class="fas fa-user-check mr-1"></i> Restore
+                  </button>
+                </form>
+                {% endif %}
+                <form method="post" action="{% url 'delete_account' account.id %}" class="d-inline" onsubmit="return confirm('Permanently delete this account? This cannot be undone.');">
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete account">
+                    <i class="fas fa-trash-alt mr-1"></i> Delete
+                  </button>
+                </form>
+              {% endif %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="8" class="text-center text-muted py-4">No registered accounts found.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock content %}
+
+{% block javascripts %}
+{{ block.super }}
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const search = document.getElementById('account-search');
+    const rows = document.querySelectorAll('#account-table tbody tr');
+
+    if (!search) return;
+
+    search.addEventListener('input', function () {
+      const query = this.value.trim().toLowerCase();
+      rows.forEach(function (row) {
+        row.style.display = row.textContent.toLowerCase().includes(query) ? '' : 'none';
+      });
+    });
+  });
+</script>
+{% endblock javascripts %}

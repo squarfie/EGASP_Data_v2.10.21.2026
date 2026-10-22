@@ -1,315 +1,468 @@
 {% extends 'layouts/base.html' %}
 
-
 {% block title %} Dashboard {% endblock title %}
 
-<!-- Specific CSS goes HERE -->
 {% block stylesheets %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
+<style>
+  :root {
+    --dash-text: #32325d;
+    --dash-muted: #8898aa;
+    --dash-radius: 14px;
+    --dash-shadow: 0 2px 6px rgba(50, 50, 93, .08), 0 6px 18px rgba(50, 50, 93, .06);
+    --dash-shadow-hover: 0 6px 14px rgba(50, 50, 93, .12), 0 14px 30px rgba(50, 50, 93, .10);
+  }
+
+  /* ---------- Fonts ---------- */
+  .header, .card, .table, .form-control, .custom-select, .btn, .pagination {
+    font-family: var(--dash-font);
+  }
+  .header h6.h2 {
+    font-weight: 600;
+    letter-spacing: .3px;
+  }
+
+  /* ---------- Stat cards ---------- */
+  .card-stats {
+    border: 0;
+    border-radius: var(--dash-radius);
+    box-shadow: var(--dash-shadow);
+    border-top: 4px solid transparent;
+    transition: transform .2s ease, box-shadow .2s ease;
+    overflow: hidden;
+  }
+  .card-stats:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--dash-shadow-hover);
+  }
+  /* accent stripe per card, matching each icon's color */
+  .header-body .row > div:nth-child(1) .card-stats { border-top-color: #fb6340; }
+  .header-body .row > div:nth-child(2) .card-stats { border-top-color: #f5365c; }
+  .header-body .row > div:nth-child(3) .card-stats { border-top-color: #2dce89; }
+  .header-body .row > div:nth-child(4) .card-stats { border-top-color: #8965e0; }
+
+  .card-stats .card-title {
+    font-size: .72rem;
+    font-weight: 600;
+    letter-spacing: .08em;
+    color: var(--dash-muted) !important;
+    margin-bottom: .6rem !important;
+  }
+  .card-stats .text-muted {
+    color: #525f7f !important;
+    font-size: .9rem;
+    line-height: 1.7;
+  }
+  .card-stats .text-muted b {
+    color: var(--dash-text);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+  /* Total Records big number (overrides the inline 38px sizing) */
+  .card-stats .fs-6[style] {
+    font-size: 2.4rem !important;
+    line-height: 1.1;
+    color: var(--dash-text) !important;
+  }
+  .card-stats .fs-6[style] b { font-weight: 700; }
+
+  .card-stats .icon-shape {
+    width: 3rem;
+    height: 3rem;
+    font-size: 1.1rem;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, .18) !important;
+  }
+
+  /* ---------- Records table card ---------- */
+  .container-fluid.mt--6 .card {
+    border: 0;
+    border-radius: var(--dash-radius);
+    box-shadow: var(--dash-shadow);
+    overflow: hidden;
+  }
+  .container-fluid.mt--6 .card-header h3 {
+    font-weight: 600;
+    color: var(--dash-text);
+  }
+  .container-fluid.mt--6 .card-header small {
+    color: var(--dash-muted);
+    font-size: .78rem;
+  }
+
+  .table thead th {
+    font-size: .72rem;
+    font-weight: 600;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    border: 0;
+  }
+  .table tbody td {
+    font-size: .85rem;
+    color: #525f7f;
+    vertical-align: middle;
+  }
+  .table tbody tr:hover { background-color: #f6f9fc; }
+  .table tbody td a.text-danger {
+    font-weight: 600;
+    font-size: .8rem;
+    white-space: nowrap;
+  }
+
+  /* ---------- Inputs & buttons ---------- */
+  .form-control, .custom-select {
+    border-radius: 8px;
+  }
+  .btn-sm.btn-primary, .btn-neutral {
+    border-radius: 8px;
+    font-weight: 600;
+    letter-spacing: .02em;
+  }
+
+  /* ---------- Pagination ---------- */
+  .pagination .page-link {
+    border-radius: 6px;
+    margin: 0 2px;
+    border: 0;
+    font-weight: 500;
+    color: #525f7f;
+  }
+  .pagination .page-item.active .page-link {
+    box-shadow: 0 3px 8px rgba(94, 114, 228, .4);
+  }
+
+
+  /* ---------- "Showing X–Y of Z entries" label ---------- */
+.container-fluid.mt--6 .card-header small.entries-label {
+  display: inline-block;
+  margin-top: .25rem;
+  font-size: .78rem;
+  font-weight: 500;
+  letter-spacing: .01em;
+  color: #8898aa;
+  font-variant-numeric: tabular-nums;
+}
+.entries-label .entries-range {
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: rgba(137, 101, 224, .12);
+  color: #8965e0;
+  font-weight: 600;
+}
+.entries-label .entries-total {
+  color: #32325d;
+  font-weight: 700;
+}
+</style>
 {% endblock stylesheets %}
 
 {% block content %}
-
-    <!-- Header -->
-    <div class="header bg-primary pb-6">
-      <div class="container-fluid">
-        <div class="header-body">
-          <div class="row align-items-center py-4">
-            <div class="col-lg-6 col-7">
-              <h6 class="h2 text-white d-inline-block mb-0">Dashboard</h6>
-              <!-- <nav aria-label="breadcrumb" class="d-none d-md-inline-block ml-md-4">
-                <ol class="breadcrumb breadcrumb-links breadcrumb-dark">
-                  <li class="breadcrumb-item"><a href="#"><i class="fas fa-home"></i></a></li>
-                  <li class="breadcrumb-item"><a href="#">Dashboards</a></li>
-                  
-                </ol>
-              </nav> -->
-            </div>
-            <div class="col-lg-6 col-5 text-right">
-              <a href="{% url 'crf_data' %}" class="btn btn-sm btn-neutral">New CRF</a>
-            </div>
-          </div>
-          <!-- Card stats -->
-          <div class="row">
-            <!-- Record Count -->
-            <div class="col-xl-3 col-md-6">
-                <div class="card card-stats" style="height: 80%;">
-                    <div class="card-body d-flex flex-column justify-content-between">
-                        <div class="row">
-                            <div class="col">
-                                <h5 class="card-title text-uppercase text-muted mb-0">Total Records</h5>
-                                <span class="fs-6 text-muted " style="font-size: 25px;"> <b>{{ record_count }}</b></span>
-                            </div>
-                            <div class="col-auto">
-                                <div class="icon icon-shape bg-gradient-orange text-white rounded-circle shadow">
-                                    <i class="ni ni-world"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        
-            <!-- Per Clinic Count -->
-            <div class="col-xl-3 col-md-6">
-                <div class="card card-stats" style="height: 80%;">
-                    <div class="card-body d-flex flex-column justify-content-between">
-                        <div class="row">
-                            <div class="col">
-                                <h5 class="card-title text-uppercase text-muted mb-0">Clinic Count</h5>
-                              
-                                <span class="fs-6 text-muted ">TLY: &nbsp; <b>{{ tly_count }}</b></span> <br>
-                                <span class="fs-6 text-muted ">PSH: &nbsp; <b>{{ psh_count }}</b></span> <br>
-                                <span class="fs-6 text-muted ">TSH: &nbsp; <b>{{ tsh_count }}</b></span>
-                            </div>
-                            <div class="col-auto">
-                                <div class="icon icon-shape bg-gradient-red text-white rounded-circle shadow">
-                                    <i class="ni ni-building"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        
-            <!-- Per Sex Count -->
-            <div class="col-xl-3 col-md-6">
-                <div class="card card-stats" style="height: 80%;">
-                    <div class="card-body d-flex flex-column justify-content-between">
-                        <div class="row">
-                            <div class="col">
-                                <h5 class="card-title text-uppercase text-muted mb-0">Gender Count</h5>
-                                <span class="fs-6 text-muted d-block">Male: <b>{{ male_count }}</b></span>
-                                <span class="fs-6 text-muted d-block">Female: <b> {{ female_count }} </b></span>
-                            </div>
-                            <div class="col-auto">
-                                <div class="icon icon-shape bg-gradient-green text-white rounded-circle shadow">
-                                    <i class="ni ni-single-02"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        
-            <!-- Age Groups -->
-            <div class="col-xl-3 col-md-6">
-                <div class="card card-stats" style="height: 80%;">
-                    <div class="card-body d-flex flex-column justify-content">
-                        <div class="row">
-                            <div class="col">
-                                <h5 class="card-title text-uppercase text-muted mb-0">Count per Age</h5>
-                                <div class="d-flex justify-content">
-                                    <span class="text-muted">0-18:</span>&nbsp;&nbsp;
-                                    <span class="text-muted"> <b>{{ age_0_18 }}</b></span>
-                                </div>
-                                <div class="d-flex justify-content">
-                                    <span class="text-muted">19-35:</span>&nbsp;&nbsp;
-                                    <span class="text-muted"><b>{{ age_19_35 }}</b></span>
-                                </div>
-                                <div class="d-flex justify-content">
-                                    <span class="text-muted">36-60:</span>&nbsp;&nbsp;
-                                    <span class="text-muted"><b>{{ age_36_60 }}</b></span>
-                                </div>
-                                <div class="d-flex justify-content">
-                                    <span class="text-muted">60+:</span>&nbsp;&nbsp;
-                                    <span class="text-muted"><b>{{ age_60_plus }}</b></span>
-                                </div>
-                            </div>
-                            <div class="col-auto">
-                                <div class="icon icon-shape bg-gradient-purple text-white rounded-circle shadow">
-                                    <i class="ni ni-hat-3"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+<div class="header bg-primary pb-6">
+  <div class="container-fluid">
+    <div class="header-body">
+      <div class="row align-items-center py-4">
+        <div class="col-lg-6 col-7">
+          <h6 class="h2 text-white d-inline-block mb-0">Dashboard</h6>
         </div>
-        
-          
-
-          </div>
+        <div class="col-lg-6 col-5 text-right">
+          <a href="{% url 'crf_data' %}" class="btn btn-sm btn-neutral">New CRF</a>
         </div>
       </div>
-  
 
-    <!-- Page content -->
-    <div class="container-fluid mt--6">
-      <!-- <div class="row">
-        <div class="col-xl-8">
-          <div class="card bg-default">
-            <div class="card-header bg-transparent">
-              <div class="row align-items-center">
-                <div class="col">
-                  <h6 class="text-light text-uppercase ls-1 mb-1">Overview</h6>
-                  <h5 class="h3 text-white mb-0">Sales value</h5>
-                </div>
-                <div class="col">
-                  <ul class="nav nav-pills justify-content-end">
-                    <li class="nav-item mr-2 mr-md-0" data-toggle="chart" data-target="#chart-sales-dark" data-update='{"data":{"datasets":[{"data":[0, 20, 10, 30, 15, 40, 20, 60, 60]}]}}' data-prefix="$" data-suffix="k">
-                      <a href="#" class="nav-link py-2 px-3 active" data-toggle="tab">
-                        <span class="d-none d-md-block">Month</span>
-                        <span class="d-md-none">M</span>
-                      </a>
-                    </li>
-                    <li class="nav-item" data-toggle="chart" data-target="#chart-sales-dark" data-update='{"data":{"datasets":[{"data":[0, 20, 5, 25, 10, 30, 15, 40, 40]}]}}' data-prefix="$" data-suffix="k">
-                      <a href="#" class="nav-link py-2 px-3" data-toggle="tab">
-                        <span class="d-none d-md-block">Week</span>
-                        <span class="d-md-none">W</span>
-                      </a>
-                    </li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-            <div class="card-body">
-              Chart
-              <div class="chart">
-                Chart wrapper
-                <canvas id="chart-sales-dark" class="chart-canvas"></canvas>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="col-xl-4">
-          <div class="card">
-            <div class="card-header bg-transparent">
-              <div class="row align-items-center">
-                <div class="col">
-                  <h6 class="text-uppercase text-muted ls-1 mb-1">Performance</h6>
-                  <h5 class="h3 mb-0">Total orders</h5>
-                </div>
-              </div>
-            </div>
-            <div class="card-body">
-              Chart
-              <div class="chart">
-                <canvas id="chart-bars" class="chart-canvas"></canvas>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div> -->
-      
       <div class="row">
-        <div class="col-xl-12">
-          <div class="card">
-            <div class="card-header border-0">
-              <div class="row align-items-center">
+        <div class="col-xl-3 col-md-6">
+          <div class="card card-stats" style="height: 80%;">
+            <div class="card-body d-flex flex-column justify-content-between">
+              <div class="row">
                 <div class="col">
-                  <h3 class="mb-0">All Records</h3>
-                  
+                  <h5 class="card-title text-uppercase text-muted mb-0">Total Records</h5>
+                  <span class="fs-6 text-muted" style="font-size: 28px;"><b>{{ record_count }}</b></span>
                 </div>
-                <div class="row"></div>
-                <div class="col md-6 d-flex justify-content-end">
-                  <form id="search-input" class="navbar-search navbar-search-light form-inline mr-sm-3 " id="navbar-search-main">
-                    <div class="form-group mb-0">
-                      <div class="input-group input-group-alternative input-group-merge">
-                        <div class="input-group-prepend">
-                          <span class="input-group-text"><i class="fas fa-search"></i></span>
-                        </div>
-                        <input class="form-control" placeholder="Search Table" type="text" onkeyup="searchTable()">
-                      </div>
-                    </div>
-                    <button type="button" class="close" data-action="search-close" data-target="#navbar-search-main" aria-label="Close">
-                      <span aria-hidden="true">x</span>
-                    </button>
-                  </form>
-                </div> </div>
+                <div class="col-auto">
+                  <div class="icon icon-shape bg-gradient-orange text-white rounded-circle shadow"><i class="ni ni-world"></i></div>
+                </div>
               </div>
-            </div>
-          <div class="table-responsive" style="max-height: 400px; overflow-y: auto; overflow-x: auto;">
-  <!-- Projects table -->
-              <table class="table align-items-center table-flush table-hover">
-                <thead class="thead-dark">
-                  <tr>
-                    <th scope="col" class="sort" data-sort="Egasp_Id" style="color: white; text-align: center;">EGASP ID</th>
-                    <th scope="col" class="sort" data-sort="Laboratory" style="color: white; text-align: center;">Laboratory</th>
-                    <th scope="col" class="sort" data-sort="Clinic" style="color: white; text-align: center;">Clinic</th>
-                    <th scope="col" class="sort" data-sort="Consult_Date" style="color: white; text-align: center;">Consult Date</th>
-                    <th scope="col" style="color: white; text-align: center;">Consult Type</th>
-                    <th scope="col" class="sort" data-sort="Uic_Ptid" style="color: white; text-align: center;">Uic/PtID</th>
-                    <th scope="col" class="sort" data-sort="Clinic_Code" style="color: white; text-align: center;">Clinic Code</th>
-                    <th scope="col" style="color: white; text-align: center;">First Name</th>
-                    <th scope="col" style="color: white; text-align: center;">Last Name</th>
-                    <th scope="col" style="color: white; text-align: center;">Birthdate</th>
-                    <th scope="col" style="color: white; text-align: center;">Sex</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody class="list">
-                  {% for isolate in isolates %}
-                  <tr>
-                    <td style="text-align: center;">{{isolate.Egasp_Id}}</td>
-                    <td style="text-align: center;">{{isolate.Laboratory}}</td>
-                    <td style="text-align: center;">{{isolate.Clinic}}</td>
-                    <td style="text-align: center;">{{isolate.Consult_Date}}</td>
-                    <td style="text-align: center;">{{isolate.Consult_Type}}</td>
-                    <td style="text-align: center;">{{isolate.Uic_Ptid}}</td>
-                    <td style="text-align: center;">{{isolate.Clinic_Code}}</td>
-                    <td style="text-align: center;">{{isolate.First_Name}}</td>
-                    <td style="text-align: center;">{{isolate.Last_Name}}</td>
-                    <td style="text-align: center;">{{isolate.Birthdate}}</td>
-                    <td style="text-align: center;">{{isolate.Sex}}</td>
-                    <td><a href="{%url 'generate_pdf' isolate.id %}" class="text-danger"> <i class="fa fa-print" aria-hidden="true"></i> View/Print </a></td>
-                  </tr>
-                  {% endfor %}
-                </tbody>
-              </table>
-            </div>
-            </div>
-                          
-  
-                     
-
-           
-           
             </div>
           </div>
         </div>
 
-        <!-- Preview window -->
-        <!-- <div class="col-xl-4">
-          <div class="card">
-            <div class="card-header border-0">
-              <div class="row align-items-center">
+        <div class="col-xl-3 col-md-6">
+          <div class="card card-stats" style="height: 80%;">
+            <div class="card-body d-flex flex-column justify-content-between">
+              <div class="row">
                 <div class="col">
-                  <h3 class="mb-0">Preview</h3>
+                  <h5 class="card-title text-uppercase text-muted mb-0">Count by Clinic</h5>
+                  <span class="fs-6 text-muted">TLY: &nbsp;<b>{{ tly_count }}</b></span><br>
+                  <span class="fs-6 text-muted">PSH: &nbsp;<b>{{ psh_count }}</b></span><br>
+                  <span class="fs-6 text-muted">TSH: &nbsp;<b>{{ tsh_count }}</b></span>
                 </div>
-                <div class="col text-right">
-                  <a href="#!" class="btn btn-sm btn-primary">See all</a>
+                <div class="col-auto">
+                  <div class="icon icon-shape bg-gradient-red text-white rounded-circle shadow"><i class="ni ni-building"></i></div>
                 </div>
               </div>
             </div>
-            
           </div>
-        </div> -->
+        </div>
+
+        <div class="col-xl-3 col-md-6">
+          <div class="card card-stats" style="height: 80%;">
+            <div class="card-body d-flex flex-column justify-content-between">
+              <div class="row">
+                <div class="col">
+                  <h5 class="card-title text-uppercase text-muted mb-0">Count by Gender</h5>
+                  <span class="fs-6 text-muted d-block">Male: <b>{{ male_count }}</b></span>
+                  <span class="fs-6 text-muted d-block">Female: <b>{{ female_count }}</b></span>
+                </div>
+                <div class="col-auto">
+                  <div class="icon icon-shape bg-gradient-green text-white rounded-circle shadow"><i class="ni ni-single-02"></i></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6">
+          <div class="card card-stats" style="height: 80%;">
+            <div class="card-body d-flex flex-column justify-content-between">
+              <div class="row">
+                <div class="col">
+                  <h5 class="card-title text-uppercase text-muted mb-0">Count by Age Group</h5>
+                  <div class="d-flex justify-content"><span class="text-muted">0-18:</span>&nbsp;&nbsp;<span class="text-muted"><b>{{ age_0_18 }}</b></span></div>
+                  <div class="d-flex justify-content"><span class="text-muted">19-35:</span>&nbsp;&nbsp;<span class="text-muted"><b>{{ age_19_35 }}</b></span></div>
+                  <div class="d-flex justify-content"><span class="text-muted">36-60:</span>&nbsp;&nbsp;<span class="text-muted"><b>{{ age_36_60 }}</b></span></div>
+                  <div class="d-flex justify-content"><span class="text-muted">60+:</span>&nbsp;&nbsp;<span class="text-muted"><b>{{ age_60_plus }}</b></span></div>
+                </div>
+                <div class="col-auto">
+                  <div class="icon icon-shape bg-gradient-purple text-white rounded-circle shadow"><i class="ni ni-hat-3"></i></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
-   
+    </div>
+  </div>
+</div>
+
+<div class="container-fluid mt--6">
+  <div class="row">
+    <div class="col-xl-12">
+      <div class="card">
+        <div class="card-header border-0">
+          <div class="row align-items-center">
+            <div class="col-md-4">
+              <h3 class="mb-0">Recent Records</h3>
+                  <small class="entries-label">
+                    {% if isolates.paginator.count %}
+                      Showing
+                      <span class="entries-range">{{ isolates.start_index }}&ndash;{{ isolates.end_index }}</span>
+                      of <span class="entries-total">{{ isolates.paginator.count }}</span> entries
+                    {% else %}
+                      Showing <span class="entries-range">0</span> of <span class="entries-total">0</span> entries
+                    {% endif %}
+                  </small>
+            </div>
+            <div class="col-md-8 d-flex justify-content-end">
+              <form method="get" action="{% url 'home' %}" class="form-inline">
+                <div class="input-group input-group-alternative input-group-merge mr-2">
+                  <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-search"></i></span></div>
+                  <input class="form-control" placeholder="Search Table" type="search" name="q" value="{{ search_query }}">
+                </div>
+                <select class="custom-select custom-select-sm mr-2" name="page_size" aria-label="Records per page">
+                  <option value="10" {% if page_size == 10 %}selected{% endif %}>10</option>
+                  <option value="25" {% if page_size == 25 %}selected{% endif %}>25</option>
+                  <option value="50" {% if page_size == 50 %}selected{% endif %}>50</option>
+                  <option value="100" {% if page_size == 100 %}selected{% endif %}>100</option>
+                </select>
+                <button class="btn btn-sm btn-primary" type="submit">Search</button>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <div class="table-responsive" style="max-height: 400px; overflow-y: auto; overflow-x: auto;">
+          <table class="table align-items-center table-flush table-hover">
+            <thead class="thead-dark">
+              <tr>
+                <th scope="col" style="color: white; text-align: center;">EGASP ID</th>
+                <th scope="col" style="color: white; text-align: center;">Laboratory</th>
+                <th scope="col" style="color: white; text-align: center;">Clinic</th>
+                <th scope="col" style="color: white; text-align: center;">Consult Date</th>
+                <th scope="col" style="color: white; text-align: center;">Consult Type</th>
+                <th scope="col" style="color: white; text-align: center;">Uic/PtID</th>
+                <th scope="col" style="color: white; text-align: center;">Clinic Code</th>
+                <th scope="col" style="color: white; text-align: center;">First Name</th>
+                <th scope="col" style="color: white; text-align: center;">Last Name</th>
+                <th scope="col" style="color: white; text-align: center;">Birthdate</th>
+                <th scope="col" style="color: white; text-align: center;">Sex</th>
+                <th scope="col"></th>
+              </tr>
+            </thead>
+            <tbody class="list">
+              {% for isolate in isolates %}
+              <tr>
+                <td style="text-align: center;">{{ isolate.Egasp_Id }}</td>
+                <td style="text-align: center;">{{ isolate.Laboratory }}</td>
+                <td style="text-align: center;">{{ isolate.Clinic }}</td>
+                <td style="text-align: center;">{{ isolate.Consult_Date }}</td>
+                <td style="text-align: center;">{{ isolate.Consult_Type }}</td>
+                <td style="text-align: center;">{{ isolate.Uic_Ptid }}</td>
+                <td style="text-align: center;">{{ isolate.Clinic_Code }}</td>
+                <td style="text-align: center;">{{ isolate.First_Name }}</td>
+                <td style="text-align: center;">{{ isolate.Last_Name }}</td>
+                <td style="text-align: center;">{{ isolate.Birthdate }}</td>
+                <td style="text-align: center;">{{ isolate.Sex }}</td>
+                <td><a href="{% url 'generate_pdf' isolate.id %}" class="text-primary"> <i class="fa fa-print" aria-hidden="true "></i></a></td>
+              </tr>
+              {% empty %}
+              <tr><td colspan="12" class="text-center text-muted py-4">No records found.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+<!-- Pagination Footer -->
+<div class="d-flex align-items-center justify-content-between w-100 px-2 py-3">
+
+    <!-- LEFT: Go To Page -->
+    <div class="d-flex align-items-center">
+        <form method="get" class="d-flex align-items-center mb-0">
+
+            {% if search_query %}
+                <input type="hidden" name="q" value="{{ search_query }}">
+            {% endif %}
+
+            <input type="hidden" name="page_size" value="{{ page_size }}">
+
+            <label class="mb-0 mr-2 text-primary font-weight-bold"
+                   style="white-space: nowrap;">
+                Go to page:
+            </label>
+
+            <input
+                type="number"
+                name="page"
+                min="1"
+                max="{{ isolates.paginator.num_pages }}"
+                value="{{ isolates.number }}"
+                class="form-control form-control-sm mr-2"
+                style="width:60px;"
+            >
+
+            <button type="submit"
+                    class="btn btn-sm btn-primary mb-0">
+                <i class="fas fa-arrow-right"></i>
+            </button>
+
+        </form>
+    </div>
+
+
+    <!-- CENTER: Record Count -->
+    <div class="text-muted small text-center"
+         style="white-space: nowrap;">
+
+
+
+        <span class="ml-2">
+            Page {{ isolates.number }}
+            of {{ isolates.paginator.num_pages }}
+        </span>
 
     </div>
 
+
+    <!-- RIGHT: Pagination -->
+    <div class="d-flex justify-content-end">
+
+        <nav aria-label="Dashboard record pages">
+
+            <ul class="pagination pagination-sm mb-0">
+
+                <!-- Previous -->
+                {% if isolates.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link"
+                           href="?q={{ search_query|urlencode }}&page_size={{ page_size }}&page={{ isolates.previous_page_number }}">
+                            <i class="fa fa-step-backward"></i>
+                        </a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">
+                            <i class="fa fa-step-backward"></i>
+                        </span>
+                    </li>
+                {% endif %}
+
+
+                <!-- Page Numbers -->
+                {% for page_number in page_range %}
+
+                    {% if page_number == isolates.paginator.ELLIPSIS %}
+
+                        <li class="page-item disabled">
+                            <span class="page-link">
+                                {{ page_number }}
+                            </span>
+                        </li>
+
+                    {% elif page_number == isolates.number %}
+
+                        <li class="page-item active">
+                            <span class="page-link">
+                                {{ page_number }}
+                            </span>
+                        </li>
+
+                    {% else %}
+
+                        <li class="page-item">
+                            <a class="page-link"
+                               href="?q={{ search_query|urlencode }}&page_size={{ page_size }}&page={{ page_number }}">
+                                {{ page_number }}
+                            </a>
+                        </li>
+
+                    {% endif %}
+
+                {% endfor %}
+
+
+                <!-- Next -->
+                {% if isolates.has_next %}
+                    <li class="page-item">
+                        <a class="page-link"
+                           href="?q={{ search_query|urlencode }}&page_size={{ page_size }}&page={{ isolates.next_page_number }}">
+                            <i class="fa fa-step-forward"></i>
+                        </a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">
+                            <i class="fa fa-step-forward"></i>
+                        </span>
+                    </li>
+                {% endif %}
+
+            </ul>
+
+        </nav>
+
+    </div>
+
+</div>
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock content %}
 
-<!-- Specific JS goes HERE --> 
 {% block javascripts %}
-
-  <script src="/static/assets/vendor/chart.js/dist/Chart.min.js"></script>
-  <script src="/static/assets/vendor/chart.js/dist/Chart.extension.js"></script>
-  <script>
-    function searchTable() {
-      var input = document.querySelector("#search-input input");
-      var filter = input.value.toLowerCase();
-      var table = document.querySelector("table");
-      var rows = table.querySelectorAll("tbody tr");
-  
-      rows.forEach(row => {
-        var text = row.textContent.toLowerCase();
-        row.style.display = text.includes(filter) ? "" : "none";
-      });
-    }
-  </script>
-  
-
+<script src="/static/assets/vendor/chart.js/dist/Chart.min.js"></script>
+<script src="/static/assets/vendor/chart.js/dist/Chart.extension.js"></script>
 {% endblock javascripts %}

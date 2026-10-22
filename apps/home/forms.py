@@ -1,3 +1,5 @@
+import os
+
 from .models import *
 from django import forms
 
@@ -484,13 +486,13 @@ class UploadAntibioticForm(forms.ModelForm):
           model = Upload_AntibioticEntry
           fields = ['File_uploadAbx']
 
-    #ensure only csv and excel are uploaded
-    def clean_file_upload(self):
-            file = self.cleaned_data.get('File_uploadAbx') #make sure this matches the model 
-            if file:
-                if not file.name.endswith('.csv') and not file.name.endswith('.xlsx'):
-                    raise forms.ValidationError('File must be a CSV or Excel file.')
-            return file
+    def clean_File_uploadAbx(self):
+        uploaded_file = self.cleaned_data.get('File_uploadAbx')
+        if uploaded_file:
+            extension = os.path.splitext(uploaded_file.name)[1].lower()
+            if extension not in {'.csv', '.xlsx'}:
+                raise forms.ValidationError('File must be a CSV or Excel (.xlsx) file.')
+        return uploaded_file
 
 
 class SpecimenTypeForm(forms.ModelForm):

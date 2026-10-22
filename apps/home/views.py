@@ -29,14 +29,42 @@ from django.http import JsonResponse, FileResponse
 import pandas as pd
 from django.utils import timezone
 from django.db.models import Q
+from django.db import transaction
 from django.utils.timezone import now
 import csv
 from io import TextIOWrapper
+from openpyxl import load_workbook
 from .utils import clean_date   # the date cleaner we made earlier
+from apps.authentication.decorators import admin_required
+from django.views.decorators.http import require_POST
 
 @login_required(login_url="/login/")
 def index(request):
-    isolates = Egasp_Data.objects.all().order_by('-Date_of_Entry')
+    search_query = request.GET.get('q', '').strip()
+    try:
+        page_size = int(request.GET.get('page_size', 10))
+    except (TypeError, ValueError):
+        page_size = 10
+    if page_size not in {10, 25, 50, 100}:
+        page_size = 10
+
+    isolates_queryset = Egasp_Data.objects.all().order_by('-Date_of_Entry')
+    if search_query:
+        isolates_queryset = isolates_queryset.filter(
+            Q(Egasp_Id__icontains=search_query)
+            | Q(First_Name__icontains=search_query)
+            | Q(Middle_Name__icontains=search_query)
+            | Q(Last_Name__icontains=search_query)
+            | Q(Clinic__icontains=search_query)
+            | Q(Clinic_Code__icontains=search_query)
+            | Q(Uic_Ptid__icontains=search_query)
+        )
+
+    paginator = Paginator(isolates_queryset, page_size)
+    isolates = paginator.get_page(request.GET.get('page'))
+    page_range = paginator.get_elided_page_range(
+        isolates.number, on_each_side=1, on_ends=1
+    )
 
     # Count per clinic
     tly_count = Egasp_Data.objects.filter(Clinic_Code='TLY').count()
@@ -69,6 +97,9 @@ def index(request):
         'age_19_35': age_19_35,
         'age_36_60': age_36_60,
         'age_60_plus': age_60_plus,
+        'page_range': page_range,
+        'page_size': page_size,
+        'search_query': search_query,
     }
 
     return render(request, 'home/index.html', context)
@@ -102,6 +133,7 @@ def pages(request):
         print(f"Error: {e}")
         # Redirect to a different view or render a different template
         return redirect('home')  # Redirect to the home view or any other view
+
 
 # Adding Data view
 @login_required(login_url="/login/")
@@ -2678,6 +2710,8 @@ def upload_egasp(request):
 
 
 @login_required(login_url="/login/")
+@admin_required
+@require_POST
 def delete_all_egasp(request):
 
     # Delete all antibiotic entries first (avoids FK issues)
@@ -2833,133 +2867,210 @@ def safe_float(value):
 
 
 
+ANTIBIOTIC_REQUIRED_COLUMNS = ("ab_EgaspId", "ab_Abx_code")
+
+
+def _clean_import_value(value):
+    return "" if value is None else str(value).strip()
+
+
+def _clean_optional_import_value(value):
+    cleaned = _clean_import_value(value)
+    return cleaned or None
+
+
+def _read_antibiotic_rows(uploaded_file):
+    extension = os.path.splitext(uploaded_file.name)[1].lower()
+
+    if extension == ".csv":
+        try:
+            lines = uploaded_file.read().decode("utf-8-sig").splitlines()
+        except UnicodeDecodeError as exc:
+            raise ValueError("The CSV file must use UTF-8 encoding.") from exc
+        reader = csv.DictReader(lines)
+        return list(reader), reader.fieldnames or []
+
+    if extension == ".xlsx":
+        try:
+            workbook = load_workbook(uploaded_file, read_only=True, data_only=True)
+        except Exception as exc:
+            raise ValueError("The Excel file could not be read.") from exc
+
+        sheet = workbook.active
+        values = sheet.iter_rows(values_only=True)
+        header_row = next(values, ())
+        headers = [_clean_import_value(value) for value in header_row]
+        rows = [dict(zip(headers, row)) for row in values]
+        workbook.close()
+        return rows, headers
+
+    raise ValueError("File must be a CSV or Excel (.xlsx) file.")
+
+
+def _parse_import_bool(value):
+    return _clean_import_value(value).lower() in {"1", "true", "yes"}
+
+
+def _parse_import_int(value):
+    cleaned = _clean_import_value(value)
+    if not cleaned:
+        return None
+    try:
+        number = Decimal(cleaned)
+        return int(number) if number == number.to_integral_value() else None
+    except (ValueError, TypeError, ArithmeticError):
+        return None
+
+
+def _parse_import_decimal(value):
+    cleaned = _clean_import_value(value)
+    if not cleaned:
+        return None
+    try:
+        return Decimal(cleaned)
+    except (ValueError, TypeError, ArithmeticError):
+        return None
+
+
 @login_required(login_url="/login/")
+@require_POST
 def upload_antibiotic_entries(request):
+    form = UploadAntibioticForm(request.POST, request.FILES)
+    if not form.is_valid():
+        messages.error(request, " ".join(
+            error for errors in form.errors.values() for error in errors
+        ))
+        return redirect("show_data")
 
-    if request.method == "POST":
-        form = UploadAntibioticForm(request.POST, request.FILES)
+    try:
+        rows, headers = _read_antibiotic_rows(form.cleaned_data["File_uploadAbx"])
+    except ValueError as exc:
+        messages.error(request, str(exc))
+        return redirect("show_data")
 
-        if form.is_valid():
-            csv_file = request.FILES["File_uploadAbx"]
+    missing_columns = [
+        column for column in ANTIBIOTIC_REQUIRED_COLUMNS if column not in headers
+    ]
+    if missing_columns:
+        messages.error(
+            request,
+            f"Missing required columns: {', '.join(missing_columns)}",
+        )
+        return redirect("show_data")
 
-            # Decode and read CSV
-            decoded_file = csv_file.read().decode("utf-8-sig").splitlines()
-            reader = csv.DictReader(decoded_file)
+    egasp_by_id = {
+        item.Egasp_Id.casefold(): item
+        for item in Egasp_Data.objects.only("id", "Egasp_Id")
+        if item.Egasp_Id
+    }
+    breakpoint_by_code = {}
+    for breakpoint in BreakpointsTable.objects.all():
+        code = _clean_import_value(breakpoint.Whonet_Abx).casefold()
+        if code and code not in breakpoint_by_code:
+            breakpoint_by_code[code] = breakpoint
 
-            success = 0
-            failed = 0
-            
-            # Local Helpers
-            def parse_bool(val):
-                return str(val).strip().lower() in {"1", "true", "yes"}
+    created_count = 0
+    updated_count = 0
+    skipped_count = 0
+    missing_egasp_ids = set()
+    row_errors = []
 
-            def parse_int(val):
-                if not val: return None
-                val = str(val).strip()
-                return int(val) if val.isdigit() else None
+    for row_number, row in enumerate(rows, start=2):
+        egasp_id = _clean_import_value(row.get("ab_EgaspId"))
+        abx_code = _clean_import_value(row.get("ab_Abx_code"))
 
-            for row in reader:
-                egasp_id = (row.get("ab_EgaspId") or "").strip()
-                abx_code = (row.get("ab_Abx_code") or "").strip()
+        if not egasp_id or not abx_code:
+            skipped_count += 1
+            row_errors.append(f"row {row_number}: missing EGASP ID or antibiotic code")
+            continue
 
-                if not egasp_id or not abx_code:
-                    failed += 1
-                    continue
+        egasp_obj = egasp_by_id.get(egasp_id.casefold())
+        if egasp_obj is None:
+            skipped_count += 1
+            missing_egasp_ids.add(egasp_id)
+            continue
 
-                try:
-                    # ---------- EGASP lookup ----------
-                    try:
-                        egasp_obj = Egasp_Data.objects.get(Egasp_Id__iexact=egasp_id)
-                    except Egasp_Data.DoesNotExist:
-                        print(f"Skipping — EGASP ID not found: {egasp_id}")
-                        failed += 1
-                        continue
+        breakpoint = breakpoint_by_code.get(abx_code.casefold())
+        defaults = {
+            "ab_EgaspId": egasp_obj.Egasp_Id,
+            "ab_Antibiotic": _clean_import_value(row.get("ab_Antibiotic")),
+            "ab_Abx": _clean_import_value(row.get("ab_Abx")),
+            "ab_Disk_value": _parse_import_int(row.get("ab_Disk_value")),
+            "ab_Disk_RIS": _clean_import_value(row.get("ab_Disk_RIS")),
+            "ab_MIC_operand": _clean_import_value(row.get("ab_MIC_operand")),
+            "ab_MIC_value": _parse_import_decimal(row.get("ab_MIC_value")),
+            "ab_MIC_RIS": _clean_import_value(row.get("ab_MIC_RIS")),
+            "ab_AlertMIC": _parse_import_bool(row.get("ab_AlertMIC")),
+            "ab_Alert_val": _clean_import_value(row.get("ab_Alert_val")),
+            "ab_Retest_Antibiotic": _clean_import_value(row.get("ab_Retest_Antibiotic")),
+            "ab_Retest_Abx_code": _clean_import_value(row.get("ab_Retest_Abx_code")),
+            "ab_Retest_Abx": _clean_import_value(row.get("ab_Retest_Abx")),
+            "ab_Retest_DiskValue": _parse_import_int(row.get("ab_Retest_DiskValue")),
+            "ab_Retest_Disk_RIS": _clean_import_value(row.get("ab_Retest_Disk_RIS")),
+            "ab_Retest_MIC_operand": _clean_import_value(row.get("ab_Retest_MIC_operand")),
+            "ab_Retest_MICValue": _parse_import_decimal(row.get("ab_Retest_MICValue")),
+            "ab_Retest_MIC_RIS": _clean_import_value(row.get("ab_Retest_MIC_RIS")),
+            "ab_Retest_AlertMIC": _parse_import_bool(row.get("ab_Retest_AlertMIC")),
+            "ab_Retest_Alert_val": _clean_import_value(row.get("ab_Retest_Alert_val")),
+            "ab_R_breakpoint": _clean_optional_import_value(row.get("ab_R_breakpoint")),
+            "ab_I_breakpoint": _clean_optional_import_value(row.get("ab_I_breakpoint")),
+            "ab_SDD_breakpoint": _clean_optional_import_value(row.get("ab_SDD_breakpoint")),
+            "ab_S_breakpoint": _clean_optional_import_value(row.get("ab_S_breakpoint")),
+            "ab_Ret_R_breakpoint": _clean_optional_import_value(row.get("ab_Ret_R_breakpoint")),
+            "ab_Ret_I_breakpoint": _clean_optional_import_value(row.get("ab_Ret_I_breakpoint")),
+            "ab_Ret_SDD_breakpoint": _clean_optional_import_value(row.get("ab_Ret_SDD_breakpoint")),
+            "ab_Ret_S_breakpoint": _clean_optional_import_value(row.get("ab_Ret_S_breakpoint")),
+        }
 
-                    # ---------- Breakpoint lookup ----------
-                    # bp = BreakpointsTable.objects.filter(
-                    #     Whonet_Abx__iexact=abx_code,
-                    #     Show=True
-                    # ).first()
+        if breakpoint:
+            defaults.update({
+                "ab_R_breakpoint": breakpoint.R_val,
+                "ab_I_breakpoint": breakpoint.I_val,
+                "ab_SDD_breakpoint": breakpoint.SDD_val,
+                "ab_S_breakpoint": breakpoint.S_val,
+                "ab_Ret_R_breakpoint": breakpoint.R_val,
+                "ab_Ret_I_breakpoint": breakpoint.I_val,
+                "ab_Ret_SDD_breakpoint": breakpoint.SDD_val,
+                "ab_Ret_S_breakpoint": breakpoint.S_val,
+            })
 
+        try:
+            with transaction.atomic():
+                entry, created = AntibioticEntry.objects.update_or_create(
+                    ab_idNumber_egasp=egasp_obj,
+                    ab_Abx_code=abx_code,
+                    defaults=defaults,
+                )
+                if breakpoint:
+                    entry.ab_breakpoints_id.set([breakpoint])
+                    entry.save()
+            if created:
+                created_count += 1
+            else:
+                updated_count += 1
+        except Exception as exc:
+            skipped_count += 1
+            row_errors.append(f"row {row_number}: {exc}")
 
-                    bp = BreakpointsTable.objects.filter(
-                        Whonet_Abx__iexact=abx_code
-                    ).first()
+    messages.success(
+        request,
+        "Antibiotic upload complete: "
+        f"{created_count} created, {updated_count} updated, {skipped_count} skipped.",
+    )
+    if missing_egasp_ids:
+        messages.warning(
+            request,
+            f"Missing EGASP IDs: {', '.join(sorted(missing_egasp_ids))}. "
+            "Upload those EGASP records first, then upload the antibiotic file again.",
+        )
+    if row_errors:
+        preview = "; ".join(row_errors[:5])
+        remainder = len(row_errors) - 5
+        if remainder > 0:
+            preview += f"; and {remainder} more"
+        messages.warning(request, f"Skipped row details: {preview}.")
 
-                    # ---------- Extract Values ----------
-                    mic_value = safe_float(row.get("ab_MIC_value"))
-                    disk_value = parse_int(row.get("ab_Disk_value"))
-                    
-                    # NOTE: RIS calculation is handled by signals.py post_save.
-                    # We only store what is explicitly in the CSV, if anything.
-                    mic_ris = row.get("ab_MIC_RIS") or ""
-                    disk_ris = row.get("ab_Disk_RIS") or ""
-
-                    # ---------- Defaults Preparation ----------
-                    defaults = {
-                        "ab_EgaspId": egasp_id,
-                        "ab_Antibiotic": row.get("ab_Antibiotic") or "",
-                        "ab_Abx": row.get("ab_Abx") or "",
-                        
-                        "ab_Disk_value": disk_value,
-                        "ab_Disk_RIS": disk_ris,
-
-                        "ab_MIC_operand": row.get("ab_MIC_operand") or "",
-                        "ab_MIC_value": mic_value,
-                        "ab_MIC_RIS": mic_ris,
-
-                        "ab_AlertMIC": parse_bool(row.get("ab_AlertMIC")),
-                        "ab_Alert_val": row.get("ab_Alert_val") or "",
-
-                        # ---- RETEST ----
-                        "ab_Retest_Antibiotic": row.get("ab_Retest_Antibiotic") or "",
-                        "ab_Retest_Abx_code": row.get("ab_Retest_Abx_code") or "",
-                        "ab_Retest_Abx": row.get("ab_Retest_Abx") or "",
-                        "ab_Retest_DiskValue": parse_int(row.get("ab_Retest_DiskValue")),
-                        "ab_Retest_Disk_RIS": row.get("ab_Retest_Disk_RIS") or "",
-                        "ab_Retest_MIC_operand": row.get("ab_Retest_MIC_operand") or "",
-                        "ab_Retest_MICValue": safe_float(row.get("ab_Retest_MICValue")),
-                        "ab_Retest_MIC_RIS": row.get("ab_Retest_MIC_RIS") or "",
-                        "ab_Retest_AlertMIC": parse_bool(row.get("ab_Retest_AlertMIC")),
-                        "ab_Retest_Alert_val": row.get("ab_Retest_Alert_val") or "",
-                    }
-
-                    # ---------- Apply Breakpoints ----------
-                    if bp:
-                        defaults.update({
-                            "ab_R_breakpoint": bp.R_val,
-                            "ab_I_breakpoint": bp.I_val,
-                            "ab_SDD_breakpoint": bp.SDD_val,
-                            "ab_S_breakpoint": bp.S_val,
-                            "ab_Ret_R_breakpoint": bp.R_val,
-                            "ab_Ret_I_breakpoint": bp.I_val,
-                            "ab_Ret_SDD_breakpoint": bp.SDD_val,
-                            "ab_Ret_S_breakpoint": bp.S_val,
-                        })
-
-                    # ---------- Update/Create ----------
-                    AntibioticEntry.objects.update_or_create(
-                        ab_idNumber_egasp=egasp_obj,
-                        ab_Abx_code=abx_code,
-                        defaults=defaults,
-                    )
-                    success += 1
-
-                except Exception as e:
-                    failed += 1
-                    print(f"ERROR row={egasp_id}: {e}")
-
-            messages.success(
-                request,
-                f"Antibiotic Upload Complete — {success} saved, {failed} skipped."
-            )
-
-            return redirect("show_data")
-
-    else:
-        form = UploadAntibioticForm()
-
-    return render(request, "sidenav.html", {"form": form})
+    return redirect("show_data")
 
 
 

@@ -24,6 +24,9 @@
   <link rel="icon" href="/static/assets/img/brand/virus.png" type="image/png">
   <!-- Fonts -->
   <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <!-- Icons -->
   <link rel="stylesheet" href="/static/assets/vendor/nucleo/css/nucleo.css" type="text/css">
   <link rel="stylesheet" href="/static/assets/vendor/@fortawesome/fontawesome-free/css/all.min.css" type="text/css">
@@ -32,7 +35,104 @@
 
   <!-- Specific CSS goes HERE -->
   {% block stylesheets %}
- 
+ <style>
+  body {
+    font-family: 'Inter', 'Open Sans', -apple-system, 'Segoe UI', Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ---------- Hero ---------- */
+  .header.bg-gradient-primary {
+    position: relative;
+    overflow: hidden;
+  }
+  /* soft light glow behind the text */
+  .header.bg-gradient-primary::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(600px 260px at 50% 30%, rgba(255, 255, 255, .16), transparent 70%),
+      radial-gradient(420px 220px at 85% 10%, rgba(216, 180, 254, .22), transparent 70%);
+    pointer-events: none;
+  }
+  .header.bg-gradient-primary .container { position: relative; z-index: 1; }
+
+  .hero-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .35rem .9rem;
+    margin-bottom: 1.1rem;
+    font-size: .72rem;
+    font-weight: 600;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: #fff;
+    background: rgba(255, 255, 255, .12);
+    border: 1px solid rgba(255, 255, 255, .25);
+    border-radius: 999px;
+    backdrop-filter: blur(4px);
+    text-decoration: none;
+    transition: background .2s ease, border-color .2s ease;
+  }
+  .hero-eyebrow:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, .2);
+    border-color: rgba(255, 255, 255, .45);
+  }
+  .hero-eyebrow::before {
+    content: "";
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #2dce89;
+    box-shadow: 0 0 0 0 rgba(45, 206, 137, .6);
+    animation: heroPulse 2s infinite;
+  }
+  @keyframes heroPulse {
+    0%   { box-shadow: 0 0 0 0 rgba(45, 206, 137, .55); }
+    70%  { box-shadow: 0 0 0 8px rgba(45, 206, 137, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(45, 206, 137, 0); }
+  }
+
+  .hero-title {
+    font-size: clamp(1.5rem, 2.6vw, 2.1rem);
+    font-weight: 700;
+    line-height: 1.25;
+    letter-spacing: -.01em;
+    margin-bottom: .9rem;
+    text-shadow: 0 2px 12px rgba(8, 18, 45, .25);
+  }
+  .hero-title a {
+    color: #fff;
+    text-decoration: none;
+  }
+  .hero-title a:hover { color: #fff; opacity: .92; }
+
+  .hero-sub {
+    max-width: 34rem;
+    margin: 0 auto;
+    font-size: .95rem;
+    font-weight: 400;
+    line-height: 1.65;
+    color: rgba(255, 255, 255, .78);
+  }
+
+  /* subtle entrance */
+  .hero-eyebrow, .hero-title, .hero-sub {
+    animation: heroIn .6s ease-out both;
+  }
+  .hero-title { animation-delay: .08s; }
+  .hero-sub   { animation-delay: .16s; }
+  @keyframes heroIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .hero-eyebrow, .hero-title, .hero-sub, .hero-eyebrow::before { animation: none; }
+  }
+</style>
   {% endblock stylesheets %}
 
   <script src="https://unpkg.com/htmx.org@1.9.2"></script>
@@ -51,13 +151,17 @@
           <div class="row justify-content-center">
             <div class="col-lg-5 col-md-6">
               <h2 class="text-white">
-                <a target="_blank" class="text-white"
-                   href="https://arsp.com.ph/">Enhanced Gonococcal Antimicrobial Surveillance Program</a>
-              </h2>
+              <a target="_blank" class="text-white"
+                   href="https://arsp.com.ph/"> Antimicrobial Resistance Surveillance Reference Laboratory</a>
               <p class="text-lead text-light">
-                Antimicrobial Resistance Surveillance Reference Laboratory
-               <a target="_blank" class="text-white" href="#">EGASP Online</a>.  
+               Enhanced Gonococcal Antimicrobial Surveillance Program
               </p>
+              </h2>
+
+              <p class="text-lead text-light">
+              <span style="font-weight: 700; ">  EGASP </span> Online  
+              </p>
+
             </div>
           </div>
         </div>

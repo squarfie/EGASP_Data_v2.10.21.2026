@@ -173,7 +173,9 @@ label.form-control-label{
                 {% if isolates %}
                 <a href="{% url 'generate_pdf' isolates.id %}" class="btn btn-sm btn-primary" target="_blank">Print Result</a>
                 {% endif%}
+                {% if request.user.is_superuser or request.user.is_staff %}
                 <a href="{% url 'add_breakpoints' %}" class="btn btn-warning btn-sm">Breakpoints</a>
+                {% endif %}
               </div>
               </div>
               

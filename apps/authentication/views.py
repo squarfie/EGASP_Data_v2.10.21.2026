@@ -3,15 +3,17 @@
 Copyright (c) 2019 - present AppSeed.us
 """
 
-from django.shortcuts import render, redirect
+from django.shortcuts import get_object_or_404, render, redirect
 from django.contrib.auth import authenticate, login, logout
 from .forms import *
+from .decorators import admin_required
 from django.contrib import messages
 from django.contrib.auth.models import User
 from django.contrib.auth.hashers import make_password
 from django.urls import reverse_lazy
 from django.core.exceptions import ValidationError
 from django.contrib.auth.password_validation import validate_password
+from django.views.decorators.http import require_POST
 
 
 def login_view(request):
@@ -61,15 +63,35 @@ def forgot_password_view(request):
     if request.method == "POST":
         form = ForgotPasswordForm(request.POST)
         if form.is_valid():
-            username_or_email = form.cleaned_data.get("username_or_email")
-            try:
-                user = User.objects.get(username=username_or_email)  # Try by username
-            except User.DoesNotExist:
-                try:
-                    user = User.objects.get(email=username_or_email)  # Try by email
-                except User.DoesNotExist:
-                    messages.error(request, "User not found.")
-                    return render(request, "accounts/forgot_password.html", {"form": form})
+            username_or_email = form.cleaned_data["username_or_email"].strip()
+            user = User.objects.filter(username=username_or_email).first()
+
+            if user is None:
+                email_matches = User.objects.filter(
+                    email__iexact=username_or_email
+                ).order_by("id")
+                match_count = email_matches.count()
+
+                if match_count > 1:
+                    messages.error(
+                        request,
+                        "Multiple accounts use this email. Enter your username instead.",
+                    )
+                    return render(
+                        request,
+                        "accounts/forgot_password.html",
+                        {"form": form},
+                    )
+
+                user = email_matches.first()
+
+            if user is None:
+                messages.error(request, "User not found.")
+                return render(
+                    request,
+                    "accounts/forgot_password.html",
+                    {"form": form},
+                )
 
             request.session['reset_user_id'] = user.id
             return redirect("reset_password")  # Ensure URL name matches
@@ -120,3 +142,52 @@ def reset_password_view(request):
 def logout_view(request):
     logout(request)  # Logs out the user
     return redirect("login")
+
+
+@admin_required
+def account_management(request):
+    users = User.objects.all().order_by(
+        "-is_superuser", "-is_staff", "username"
+    )
+    return render(request, "accounts/account_management.html", {"users": users})
+
+
+@admin_required
+@require_POST
+def set_account_status(request, user_id):
+    account = get_object_or_404(User, pk=user_id)
+    action = (request.POST.get("action") or "").strip().lower()
+
+    if account.is_superuser:
+        messages.error(request, "Superuser accounts must be managed in Django Admin.")
+    elif account == request.user and action == "deactivate":
+        messages.error(request, "You cannot deactivate your own account.")
+    elif action == "deactivate":
+        account.is_active = False
+        account.save(update_fields=["is_active"])
+        messages.success(request, f"Registration for {account.username} was revoked.")
+    elif action == "activate":
+        account.is_active = True
+        account.save(update_fields=["is_active"])
+        messages.success(request, f"Registration for {account.username} was restored.")
+    else:
+        messages.error(request, "Unsupported account status action.")
+
+    return redirect("account_management")
+
+
+@admin_required
+@require_POST
+def delete_account(request, user_id):
+    account = get_object_or_404(User, pk=user_id)
+
+    if account.is_superuser:
+        messages.error(request, "Superuser accounts must be managed in Django Admin.")
+    elif account == request.user:
+        messages.error(request, "You cannot delete your own account.")
+    else:
+        username = account.username
+        account.delete()
+        messages.success(request, f"Account {username} was permanently deleted.")
+
+    return redirect("account_management")

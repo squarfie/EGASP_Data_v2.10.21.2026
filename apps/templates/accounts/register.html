@@ -3,112 +3,209 @@
 {% block title %} Register {% endblock title %}
 
 <!-- Specific CSS goes HERE -->
-{% block stylesheets %}{% endblock stylesheets %}
+{% block stylesheets %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
+<style>
+  :root { --dash-font: 'Inter', 'Open Sans', -apple-system, 'Segoe UI', Roboto, sans-serif; }
+
+  .login-wrap, .login-wrap .form-control, .login-wrap .btn { font-family: var(--dash-font); }
+
+  /* Card */
+  .login-card {
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 12px 34px rgba(8, 18, 45, .28), 0 2px 8px rgba(8, 18, 45, .14) !important;
+    border-top: 4px solid #5e72e4;
+  }
+  .login-card .card-header { border-bottom: 0; }
+  .login-title { font-size: 1.35rem; font-weight: 700; color: #32325d; margin-bottom: .25rem; }
+  .login-sub { font-size: .85rem; color: #8898aa; margin: 0; }
+
+  /* Message (error by default, green on success) */
+  .login-msg {
+    font-size: .82rem;
+    font-weight: 500;
+    color: #f5365c;
+    background: rgba(245, 54, 92, .08);
+    border-radius: 8px;
+    padding: .6rem .8rem;
+    margin-bottom: 1.2rem;
+    text-align: center;
+  }
+  .login-msg.is-success { color: #1aae6f; background: rgba(45, 206, 137, .12); }
+  .login-msg small { font-size: inherit; }
+  .login-msg a { font-weight: 600; text-decoration: underline; }
+
+  /* Inputs */
+  .login-wrap .input-group-alternative {
+    border-radius: 10px;
+    box-shadow: 0 1px 4px rgba(50, 50, 93, .1);
+    transition: box-shadow .2s ease;
+  }
+  .login-wrap .input-group-alternative:focus-within {
+    box-shadow: 0 0 0 3px rgba(94, 114, 228, .25), 0 3px 10px rgba(50, 50, 93, .12);
+  }
+  .login-wrap .form-control { font-size: .9rem; color: #32325d; }
+  .login-wrap .input-group-text i { color: #5e72e4; }
+
+  /* Field errors */
+  .login-wrap .text-error { display: block; }
+  .login-wrap .text-error .errorlist {
+    list-style: none;
+    margin: -.35rem 0 .9rem;
+    padding: 0 .25rem;
+  }
+  .login-wrap .text-error .errorlist li {
+    font-size: .76rem;
+    font-weight: 500;
+    color: #f5365c;
+    line-height: 1.5;
+  }
+  .login-wrap .text-error .errorlist li::before { content: "\2022"; margin-right: .4rem; }
+
+  /* Button */
+  .login-wrap .btn-signin {
+    border: 0;
+    border-radius: 10px;
+    height: 46px;
+    font-weight: 600;
+    letter-spacing: .03em;
+    background: linear-gradient(135deg, #5e72e4 0%, #8965e0 100%);
+    box-shadow: 0 4px 12px rgba(94, 114, 228, .35);
+    transition: transform .2s ease, box-shadow .2s ease, filter .2s ease;
+  }
+  .login-wrap .btn-signin:hover {
+    transform: translateY(-1px);
+    filter: brightness(1.07);
+    box-shadow: 0 7px 18px rgba(94, 114, 228, .45);
+  }
+
+  /* Below the card */
+  .login-register { font-size: .85rem; color: rgba(255, 255, 255, .7); text-align: center; }
+  .login-register a { color: #fff; font-weight: 600; margin-left: .25rem; }
+  .login-register a:hover { text-decoration: underline; }
+
+  /* Credit pill (dark background) */
+  .credit-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    padding: .3rem .85rem;
+    font-family: var(--dash-font);
+    font-size: .7rem;
+    letter-spacing: .03em;
+    background: rgba(255, 255, 255, .07);
+    border: 1px solid rgba(255, 255, 255, .15);
+    border-radius: 999px;
+    backdrop-filter: blur(4px);
+    transition: border-color .2s ease, background .2s ease;
+  }
+  .credit-pill:hover { background: rgba(255, 255, 255, .12); border-color: rgba(196, 181, 253, .5); }
+  .credit-text { color: rgba(255, 255, 255, .55); font-weight: 500; }
+  .credit-brand {
+    font-size: .55rem;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-decoration: none;
+    background: linear-gradient(90deg, #a5b4fc, #d8b4fe);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .credit-author { color: rgba(255, 255, 255, .85); font-weight: 600; text-decoration: none; }
+  .credit-author:hover { color: #d8b4fe; }
+  .credit-dot { width: 3px; height: 3px; border-radius: 50%; background: rgba(255, 255, 255, .3); }
+</style>
+{% endblock stylesheets %}
 {% block content %}
+<div class="container mt--8 pb-5 login-wrap">
+  <div class="row justify-content-center">
+    <div class="col-lg-6 col-md-8">
 
-    <!-- Page content -->
-    <div class="container mt--8 pb-5">
-      <!-- Table -->
-      <div class="row justify-content-center">
-        <div class="col-lg-6 col-md-8">
-        
-          <div class="card bg-secondary shadow border-0">
-            <div class="card-header bg-transparent pb-5">
-              <div class="text-muted text-center mt-2 mb-4">
-                Register
+      <div class="card login-card bg-secondary border-0">
+        <div class="card-header bg-transparent text-center pt-4 pb-3">
+          <h1 class="login-title">Create your account</h1>
+          <p class="login-sub">Register to access EGASP Online</p>
+        </div>
+
+        <div class="card-body px-lg-5 pt-3 pb-lg-5">
+
+          {% if msg %}
+            <div class="login-msg {% if success %}is-success{% endif %}">
+              <small>{{ msg|safe }}</small>
+            </div>
+          {% endif %}
+
+          {% if not success %}
+          <form method="POST">
+            {% csrf_token %}
+
+            <div class="form-group mb-3">
+              <div class="input-group input-group-alternative">
+                <div class="input-group-prepend">
+                  <span class="input-group-text"><i class="ni ni-hat-3"></i></span>
+                </div>
+                {{ form.username }}
               </div>
             </div>
-            <div class="card-body px-lg-5 py-lg-5">
-              <div class="text-center text-muted mb-4">
+            <span class="text-error">{{ form.username.errors }}</span>
 
-                {% if msg %}
-                  <small>{{ msg | safe }}</small>
-                {% else %}
-                  Add your credentials
-                {% endif %}  
-              
+            <div class="form-group mb-3">
+              <div class="input-group input-group-alternative">
+                <div class="input-group-prepend">
+                  <span class="input-group-text"><i class="ni ni-email-83"></i></span>
+                </div>
+                {{ form.email }}
               </div>
-
-              {% if not success %}
-
-                <form method="POST">
-
-                  {% csrf_token %}
-            
-                  <div class="form-group">
-                    <div class="input-group input-group-alternative mb-3">
-                      <div class="input-group-prepend">
-                        <span class="input-group-text"><i class="ni ni-hat-3"></i></span>
-                      </div>
-                      {{ form.username }}
-                    </div>
-                  </div>
-                  <span class="text-error">{{ form.username.errors }}</span>
-
-                  <div class="form-group">
-                    <div class="input-group input-group-alternative mb-3">
-                      <div class="input-group-prepend">
-                        <span class="input-group-text"><i class="ni ni-email-83"></i></span>
-                      </div>
-                      {{ form.email }}
-                    </div>
-                  </div>
-                  <span class="text-error">{{ form.email.errors }}</span>
-
-                  <div class="form-group">
-                    <div class="input-group input-group-alternative">
-                      <div class="input-group-prepend">
-                        <span class="input-group-text"><i class="ni ni-lock-circle-open"></i></span>
-                      </div>
-                      {{ form.password1 }}
-                    </div>
-                  </div>
-                  <span class="text-error">{{ form.password1.errors }}</span>
-
-                  <div class="form-group">
-                    <div class="input-group input-group-alternative">
-                      <div class="input-group-prepend">
-                        <span class="input-group-text"><i class="ni ni-lock-circle-open"></i></span>
-                      </div>
-                      {{ form.password2 }}
-                    </div>
-                  </div>
-                  <span class="text-error">{{ form.password2.errors }}</span>
-
-                  <!-- <div class="row my-4">
-                    <div class="col-12">
-                      <div class="custom-control custom-control-alternative custom-checkbox">
-                        <input class="custom-control-input" id="customCheckRegister" type="checkbox">
-                        <label class="custom-control-label" for="customCheckRegister">
-                          <span class="text-muted">I agree with the <a href="#!">Privacy Policy</a></span>
-                        </label>
-                      </div>
-                    </div>
-                  </div> -->
-                  <div class="text-center">
-                    <button type="submit" class="btn btn-primary mt-4">Create account</button>
-                  </div>
-                </form>
-
-              {% endif %}  
-  
             </div>
-          </div>
+            <span class="text-error">{{ form.email.errors }}</span>
+
+            <div class="form-group mb-3">
+              <div class="input-group input-group-alternative">
+                <div class="input-group-prepend">
+                  <span class="input-group-text"><i class="ni ni-lock-circle-open"></i></span>
+                </div>
+                {{ form.password1 }}
+              </div>
+            </div>
+            <span class="text-error">{{ form.password1.errors }}</span>
+
+            <div class="form-group mb-3">
+              <div class="input-group input-group-alternative">
+                <div class="input-group-prepend">
+                  <span class="input-group-text"><i class="ni ni-lock-circle-open"></i></span>
+                </div>
+                {{ form.password2 }}
+              </div>
+            </div>
+            <span class="text-error">{{ form.password2.errors }}</span>
+
+            <button type="submit" class="btn btn-primary btn-block btn-signin mt-4">Create account</button>
+          </form>
+          {% endif %}
 
         </div>
       </div>
 
-      <div class="row mt-3">
-        <div class="col-3"></div>
-        <div class="col-3">
-          <a href="{% url 'login' %}" class="text-light"><large>Login</large></a>
-        </div>
-      </div>
+      <p class="login-register mt-4 mb-0">
+        Already have an account?<a href="{% url 'login' %}">Login</a>
+      </p>
+
+      <!-- <div class="text-center mt-4">
+        <span class="credit-pill">
+          <span class="credit-text">created for</span>
+          <a href="https://arsp.com.ph/" class="credit-brand" target="_blank" rel="noopener">ARSP</a>
+          <span class="credit-dot"></span>
+          <span class="credit-text">by <a href="#" class="credit-author" target="_blank" rel="noopener">squarfie</a></span>
+        </span>
+      </div> -->
 
     </div>
   </div>
-
+</div>
 {% endblock content %}
 
 <!-- Specific JS goes HERE --> 

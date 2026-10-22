@@ -192,8 +192,9 @@ label.form-control-label{
                 <a href="{% url 'crf_data' %}" class="btn btn-sm btn-primary">Add New</a>
                 <button type="submit" class="btn btn-sm btn-primary">Save</button>
                 <a href="{% url 'show_data' %}" class="btn btn-sm btn-primary">View / Print</a>  
+                {% if request.user.is_superuser or request.user.is_staff %}
                 <a href="{% url 'add_breakpoints' %}" class="btn btn-warning btn-sm">Breakpoints</a>
-
+                {% endif %}
               </div>
               </div>
 

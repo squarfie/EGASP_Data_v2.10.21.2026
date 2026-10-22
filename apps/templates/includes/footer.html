@@ -1,18 +1,124 @@
+<style>
+  /* ---------- Footer (no layout changes) ---------- */
+body .footer {
+  font-family: 'Inter', 'Open Sans', -apple-system, 'Segoe UI', Roboto, sans-serif;
+  border-top: 1px solid #e9ecef;
+  color: #8898aa;
+}
 
+/* Back to HOME */
+body .footer .col-xl-6:first-child a {
+  font-size: .9rem;
+  font-weight: 600;
+  letter-spacing: .01em;
+  color: #5e72e4;
+  background-image: linear-gradient(currentColor, currentColor);
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  background-size: 0% 2px;
+  transition: background-size .25s ease, color .15s ease;
+  text-decoration: none;
+}
+body .footer .col-xl-6:first-child a:hover {
+  color: #324cdd;
+  background-size: 100% 2px;
+}
+
+/* "created for" / "by squarfie" (overrides the inline 8px) */
+body .footer span[style*="font-size: 8px"] {
+  font-size: 10px !important;
+  letter-spacing: .04em;
+  text-transform: lowercase;
+}
+body .footer span[style*="font-size: 8px"] a {
+  color: #adb5bd;
+  text-decoration: none;
+  transition: color .15s ease;
+}
+body .footer span[style*="font-size: 8px"] a:hover {
+  color: #8965e0;
+}
+
+/* ARSP wordmark */
+body .footer .col-xl-6:last-child a.font-weight-bold {
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-decoration: none;
+  background: linear-gradient(90deg, #5e72e4, #8965e0);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  transition: filter .15s ease;
+}
+body .footer .col-xl-6:last-child a.font-weight-bold:hover {
+  filter: brightness(1.15);
+}
+/* ---------- "created for ARSP by squarfie" credit ---------- */
+.credit-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  padding: .3rem .85rem;
+  font-family: 'Inter', 'Open Sans', -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-size: .7rem;
+  letter-spacing: .03em;
+  background: #fff;
+  border: 1px solid #e9ecef;
+  border-radius: 999px;
+  box-shadow: 0 1px 4px rgba(50, 50, 93, .06);
+  transition: box-shadow .2s ease, border-color .2s ease;
+}
+.credit-pill:hover {
+  border-color: rgba(137, 101, 224, .35);
+  box-shadow: 0 3px 10px rgba(137, 101, 224, .15);
+}
+
+.credit-text {
+  color: #8898aa;
+  font-weight: 500;
+}
+
+/* ARSP wordmark */
+.credit-brand {
+  font-size: .85rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-decoration: none;
+  background: linear-gradient(90deg, #5e72e4, #8965e0);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* author name */
+.credit-author {
+  color: #525f7f;
+  font-weight: 600;
+  text-decoration: none;
+  transition: color .15s ease;
+}
+.credit-author:hover {
+  color: #8965e0;
+}
+
+/* small separator dot */
+.credit-dot {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: #ced4da;
+}
+</style>
 
       <!-- Footer -->
       <footer class="footer" style="padding-bottom: 0%; margin-bottom: 0; margin-top: auto; text-align: center; background-color: #f8f9fa;">
         <div class="row align-items-center justify-content-xl-between">
           <div class="col-xl-6">
             <div class="text-center text-xl-left text-muted">
-              <a href="#" class="font-weight-bold ml-1" target="_blank">Back to HOME</a>
+              <a href="{% url 'home' %}" class="font-weight-bold ml-1" target="_blank">Back to HOME</a>
             </div>
           </div>
-          <div class="col-xl-6" style="margin-bottom: 0%;">
-            <div class="text-center text-xl-right text-muted">
-              <a href="#" class="font-weight-bold ml-1" target="_blank"> &copy; DMU</a> 
-              <span style="font-size: 8px;"><a target="_blank" href="#">mcga</a></span>
-            </div>
-          </div>
+
         </div>
       </footer>
