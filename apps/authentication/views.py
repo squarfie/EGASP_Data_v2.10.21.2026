@@ -11,7 +11,7 @@ from django.contrib import messages
 from django.contrib.auth.models import User
 from django.contrib.auth.hashers import make_password
 from django.urls import reverse_lazy
-from django.core.exceptions import ValidationError
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.contrib.auth.password_validation import validate_password
 from django.views.decorators.http import require_POST
 
@@ -172,6 +172,31 @@ def set_account_status(request, user_id):
         messages.success(request, f"Registration for {account.username} was restored.")
     else:
         messages.error(request, "Unsupported account status action.")
+
+    return redirect("account_management")
+
+
+@admin_required
+@require_POST
+def set_account_role(request, user_id):
+    if not request.user.is_superuser:
+        raise PermissionDenied
+
+    account = get_object_or_404(User, pk=user_id)
+    role = (request.POST.get("role") or "").strip().lower()
+
+    if account.is_superuser:
+        messages.error(request, "Superuser roles must be managed in Django Admin.")
+    elif role == "staff":
+        account.is_staff = True
+        account.save(update_fields=["is_staff"])
+        messages.success(request, f"{account.username} is now an administrator.")
+    elif role == "user":
+        account.is_staff = False
+        account.save(update_fields=["is_staff"])
+        messages.success(request, f"{account.username} is now a standard user.")
+    else:
+        messages.error(request, "Unsupported account role.")
 
     return redirect("account_management")
 

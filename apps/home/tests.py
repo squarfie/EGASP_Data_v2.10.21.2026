@@ -4,6 +4,7 @@ Copyright (c) 2019 - present AppSeed.us
 """
 
 import csv
+from datetime import date
 from io import BytesIO, StringIO
 
 from django.contrib.auth.models import User
@@ -13,8 +14,14 @@ from django.urls import reverse
 from openpyxl import Workbook
 
 from .models import AntibioticEntry, Egasp_Data
+from .utils import clean_date
 
 # Create your tests here.
+
+
+class CleanDateTests(TestCase):
+    def test_clean_date_accepts_month_day_year_import_format(self):
+        self.assertEqual(clean_date("10/23/2026"), date(2026, 10, 23))
 
 
 class AntibioticUploadTests(TestCase):

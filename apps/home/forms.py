@@ -130,6 +130,7 @@ class egasp_Form(forms.ModelForm):
             'Date_Released' :forms.DateInput(attrs={'class': 'form-control', 'type': 'date', 'placeholder': 'MM/DD/YYYY'}),
             'Date_stocked' :forms.DateInput(attrs={'class': 'form-control', 'type': 'date', 'placeholder': 'MM/DD/YYYY'}),
             'Notes': forms.Textarea(attrs={'class': 'textarea form-control', 'rows': '3'}),
+            'Patient_Compliance_Comment': forms.Textarea(attrs={'class': 'textarea form-control', 'rows': '3'}),
             'Gs_Others': forms.Textarea(attrs={'class': 'textarea form-control', 'rows': '1'}),
             'Gs_Others2': forms.Textarea(attrs={'class': 'textarea form-control', 'rows': '1'}),
             'Gs_Others3': forms.Textarea(attrs={'class': 'textarea form-control', 'rows': '1'}),

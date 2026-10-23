@@ -3,7 +3,9 @@ __pycache__/
 *.py[cod]
 
 # tests and coverage
-*.pytest_cache
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
 .coverage
 
 # database & logs

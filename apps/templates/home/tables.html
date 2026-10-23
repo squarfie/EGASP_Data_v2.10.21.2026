@@ -40,12 +40,29 @@
             </button>
             <a class="btn btn-sm btn-neutral" href="{% url 'crf_data' %}">Add New</a>
 
-            <a class="btn btn-sm btn-neutral" href="{% url 'abxentry_view' %}">Antibiotic Results</a>
             {% if request.user.is_superuser or request.user.is_staff %}
-                          <!-- DELETE ALL BUTTON -->
-            <button class="btn btn-sm btn-danger"
+            <a id="antibiotic-results-button"
+               class="btn btn-sm btn-neutral"
+               href="{% url 'abxentry_view' %}">Antibiotic Results</a>
+            <button id="delete-all-button"
+                    class="btn btn-sm btn-danger"
                     data-toggle="modal"
                     data-target="#deleteAllModal">
+                <i class="fa fa-trash"></i> Delete All
+            </button>
+            {% else %}
+            <button id="antibiotic-results-button"
+                    class="btn btn-sm btn-neutral disabled"
+                    type="button"
+                    disabled
+                    aria-disabled="true"
+                    title="Administrator access required">Antibiotic Results</button>
+            <button id="delete-all-button"
+                    class="btn btn-sm btn-danger disabled"
+                    type="button"
+                    disabled
+                    aria-disabled="true"
+                    title="Administrator access required">
                 <i class="fa fa-trash"></i> Delete All
             </button>
             {% endif %}

@@ -18,6 +18,7 @@ urlpatterns = [
     path("reset_password/", views.reset_password_view, name="reset_password"),
     path("account-management/", views.account_management, name="account_management"),
     path("account-management/<int:user_id>/status/", views.set_account_status, name="set_account_status"),
+    path("account-management/<int:user_id>/role/", views.set_account_role, name="set_account_role"),
     path("account-management/<int:user_id>/delete/", views.delete_account, name="delete_account"),
 ]
 

@@ -153,14 +153,37 @@ class AccountManagementTests(TestCase):
         self.assertIn("/static/assets/img/brand/egasp_n.png", html)
         self.assertNotIn('class="nav-section"', html)
 
-    def test_delete_all_control_is_hidden_from_ordinary_users(self):
+    def test_restricted_table_controls_are_disabled_for_ordinary_users(self):
         request = RequestFactory().get("/show/")
         request.user = self.user
 
         html = render_to_string("home/tables.html", request=request)
 
-        self.assertNotIn("Delete All Records", html)
+        self.assertIn("Antibiotic Results", html)
+        self.assertIn('id="antibiotic-results-button"', html)
+        self.assertIn('id="delete-all-button"', html)
+        self.assertIn('aria-disabled="true"', html)
+        self.assertNotIn('href="/test_results-view/"', html)
         self.assertNotIn("data-target=\"#deleteAllModal\"", html)
+
+    def test_restricted_table_controls_are_enabled_for_admins(self):
+        request = RequestFactory().get("/show/")
+        request.user = self.admin
+
+        html = render_to_string("home/tables.html", request=request)
+
+        self.assertIn('href="/test_results-view/"', html)
+        self.assertIn('data-target="#deleteAllModal"', html)
+        self.assertNotIn('aria-disabled="true"', html)
+
+    def test_antibiotic_results_is_admin_only(self):
+        self.client.force_login(self.user)
+        forbidden_response = self.client.get(reverse("abxentry_view"))
+        self.assertEqual(forbidden_response.status_code, 403)
+
+        self.client.force_login(self.admin)
+        allowed_response = self.client.get(reverse("abxentry_view"))
+        self.assertEqual(allowed_response.status_code, 200)
 
     def test_delete_all_is_admin_only_and_post_only(self):
         self.client.force_login(self.user)
@@ -170,6 +193,88 @@ class AccountManagementTests(TestCase):
         self.client.force_login(self.admin)
         method_response = self.client.get(reverse("delete_all_egasp"))
         self.assertEqual(method_response.status_code, 405)
+
+    def test_superuser_can_promote_and_demote_an_account(self):
+        superuser = User.objects.create_superuser(
+            username="root", password="root-password", email="root@example.com"
+        )
+        self.client.force_login(superuser)
+        role_url = f"/account-management/{self.user.id}/role/"
+
+        self.client.post(role_url, {"role": "staff"})
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.is_staff)
+        self.assertFalse(self.user.is_superuser)
+
+        self.client.post(role_url, {"role": "user"})
+        self.user.refresh_from_db()
+        self.assertFalse(self.user.is_staff)
+        self.assertFalse(self.user.is_superuser)
+
+    def test_staff_account_cannot_assign_roles(self):
+        self.client.force_login(self.admin)
+
+        response = self.client.post(
+            f"/account-management/{self.user.id}/role/",
+            {"role": "staff"},
+        )
+
+        self.user.refresh_from_db()
+        self.assertEqual(response.status_code, 403)
+        self.assertFalse(self.user.is_staff)
+
+    def test_superuser_role_is_protected(self):
+        superuser = User.objects.create_superuser(
+            username="root", password="root-password", email="root@example.com"
+        )
+        self.client.force_login(superuser)
+
+        self.client.post(
+            f"/account-management/{superuser.id}/role/",
+            {"role": "user"},
+        )
+
+        superuser.refresh_from_db()
+        self.assertTrue(superuser.is_superuser)
+        self.assertTrue(superuser.is_staff)
+
+    def test_role_assignment_requires_post(self):
+        superuser = User.objects.create_superuser(
+            username="root", password="root-password", email="root@example.com"
+        )
+        self.client.force_login(superuser)
+
+        response = self.client.get(
+            f"/account-management/{self.user.id}/role/"
+        )
+
+        self.assertEqual(response.status_code, 405)
+
+    def test_superuser_sees_role_controls_and_django_admin_link(self):
+        superuser = User.objects.create_superuser(
+            username="root", password="root-password", email="root@example.com"
+        )
+        self.client.force_login(superuser)
+
+        response = self.client.get(reverse("account_management"))
+
+        self.assertContains(response, "Django Admin")
+        self.assertContains(response, reverse("admin:index"))
+        self.assertContains(
+            response,
+            f"/account-management/{self.user.id}/role/",
+        )
+
+    def test_staff_account_does_not_see_role_controls_or_django_admin_link(self):
+        self.client.force_login(self.admin)
+
+        response = self.client.get(reverse("account_management"))
+
+        self.assertNotContains(response, "Django Admin")
+        self.assertNotContains(
+            response,
+            f"/account-management/{self.user.id}/role/",
+        )
 
 
 class ForgotPasswordTests(TestCase):

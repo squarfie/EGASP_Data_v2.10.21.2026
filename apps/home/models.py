@@ -402,10 +402,12 @@ class Egasp_Data(models.Model):
     NoTOC_DatePerformed = models.DateField(null= True, blank=True)
     NoTOC_Result_of_Test = models.CharField(max_length=100, blank=True, default="N/A")
     Patient_Compliance_Antibiotics = models.CharField(max_length=100, choices=Common_Choices, default="n/a")
+    Patient_Compliance_Comment = models.TextField(max_length=255, blank=True, default="N/A")
     OtherDrugs_Specify= models.CharField(max_length=100,blank=True, default="N/A" )
     OtherDrugs_Dosage = models.CharField(max_length=100,blank=True, default="N/A")
     OtherDrugs_Route = models.CharField(max_length=100, choices=OtherDrugsRoute_Choices, default="N/A")
     OtherDrugs_Duration= models.CharField(max_length=100,  blank=True, default="N/A")
+    
 
 
     #treatment information

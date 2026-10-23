@@ -15,15 +15,28 @@ CORE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = config('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = config('DEBUG')
+DEBUG = config('DEBUG', default=False, cast=bool)
 
 
 # Allowed Hosts
-ALLOWED_HOSTS = [
-    config('SERVER', default=''),  # Use SERVER from .env if exists
+_configured_hosts = [
+    host.strip()
+    for host in config(
+        'SERVER', default=''
+    ).split(',')
+    if host.strip()
+]
+ALLOWED_HOSTS = list(dict.fromkeys([
+    *_configured_hosts,
     'localhost',
     '127.0.0.1',
     '10.10.103.54',
+]))
+
+CSRF_TRUSTED_ORIGINS = [
+    origin.strip()
+    for origin in config('CSRF_TRUSTED_ORIGINS', default='').split(',')
+    if origin.strip()
 ]
 # Application definition
 INSTALLED_APPS = [
@@ -132,17 +145,18 @@ AUTH_PASSWORD_VALIDATORS = [
 
 # Static files (CSS, JavaScript, Images)
 STATIC_URL = '/static/'
-STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
-
-MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, "media")
-
-STATIC_ROOT = config('STATIC_ROOT')
-STATICFILES_DIRS = [config('STATICFILES_DIRS')]
+STATIC_ROOT = config(
+    'STATIC_ROOT', default=os.path.join(BASE_DIR, 'staticfiles')
+)
+STATICFILES_DIRS = [
+    config(
+        'STATICFILES_DIRS', default=os.path.join(BASE_DIR, 'apps', 'static')
+    )
+]
 
 # Media files
 MEDIA_URL = '/media/'
-MEDIA_ROOT = config('MEDIA_ROOT')
+MEDIA_ROOT = config('MEDIA_ROOT', default=os.path.join(BASE_DIR, 'media'))
 
 
 # Default primary key field type
@@ -150,6 +164,13 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 if not DEBUG:
     STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SESSION_COOKIE_SECURE = config(
+    'SESSION_COOKIE_SECURE', default=not DEBUG, cast=bool
+)
+CSRF_COOKIE_SECURE = config('CSRF_COOKIE_SECURE', default=not DEBUG, cast=bool)
+SECURE_SSL_REDIRECT = config('SECURE_SSL_REDIRECT', default=False, cast=bool)
 
 TIME_ZONE = "Asia/Manila"
 
