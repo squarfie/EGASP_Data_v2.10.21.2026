@@ -10,8 +10,10 @@ from io import BytesIO, StringIO
 from django.contrib.auth.models import User
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
-from django.urls import reverse
-from openpyxl import Workbook
+from django.template.loader import render_to_string
+from django.test import RequestFactory
+from django.urls import resolve, reverse
+from openpyxl import Workbook, load_workbook
 
 from .models import AntibioticEntry, Egasp_Data
 from .utils import clean_date
@@ -22,6 +24,179 @@ from .utils import clean_date
 class CleanDateTests(TestCase):
     def test_clean_date_accepts_month_day_year_import_format(self):
         self.assertEqual(clean_date("10/23/2026"), date(2026, 10, 23))
+
+
+class SidenavActiveStateTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_superuser(
+            username="navigation-admin", password="password"
+        )
+        self.request_factory = RequestFactory()
+
+    def test_each_sidenav_page_link_is_highlighted_on_its_page(self):
+        route_names = (
+            "home",
+            "crf_data",
+            "show_data",
+            "monthly_report",
+            "add_breakpoints",
+            "add_dropdown",
+            "add_specimen",
+            "add_contact",
+            "add_clin_pers",
+            "add_location",
+        )
+
+        for route_name in route_names:
+            with self.subTest(route_name=route_name):
+                url = reverse(route_name)
+                request = self.request_factory.get(url)
+                request.user = self.user
+                request.resolver_match = resolve(url)
+                rendered = render_to_string(
+                    "includes/sidenav.html", request=request
+                )
+
+                self.assertIn(
+                    f'class="nav-link active" href="{url}"', rendered
+                )
+
+
+class MonthlyReportTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="report-user", password="password"
+        )
+        self.client.force_login(self.user)
+        self.url = reverse("monthly_report")
+
+    def _workbook_from_response(self, response):
+        return load_workbook(BytesIO(response.content), data_only=True)
+
+    def test_report_page_is_available_to_authenticated_users(self):
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'name="source" value="upload"')
+        self.assertContains(response, 'name="source" value="database"')
+        self.assertContains(response, 'name="from_date"')
+        self.assertContains(response, 'name="to_date"')
+        self.assertContains(
+            response,
+            'type="file" class="form-control-file" id="report-file"',
+        )
+        self.assertNotContains(response, 'class="custom-file-label"')
+
+    def test_database_report_filters_inclusively_by_consult_date(self):
+        tly_record = Egasp_Data.objects.create(
+            Egasp_Id="RL260001",
+            Clinic="The Love Yourself - Victoria",
+            Consult_Date=date(2026, 9, 1),
+            Age="21",
+            Culture_Result="Positive",
+        )
+        AntibioticEntry.objects.create(
+            ab_idNumber_egasp=tly_record,
+            ab_EgaspId=tly_record.Egasp_Id,
+            ab_Antibiotic="Azithromycin",
+            ab_Abx_code="AZM_NM",
+            ab_MIC_value="0.064",
+            ab_MIC_RIS="S",
+        )
+        Egasp_Data.objects.create(
+            Egasp_Id="RP260001",
+            Clinic="Parañaque Social Hygiene Clinic and Wellness Center",
+            Consult_Date=date(2026, 9, 30),
+            Age="30",
+            Culture_Result="Positive",
+        )
+        Egasp_Data.objects.create(
+            Egasp_Id="RT260001",
+            Clinic="Taguig Social Hygiene Clinic",
+            Consult_Date=date(2026, 10, 1),
+            Age="40",
+        )
+
+        response = self.client.post(
+            self.url,
+            {
+                "source": "database",
+                "from_date": "2026-09-01",
+                "to_date": "2026-09-30",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response["Content-Type"],
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+        workbook = self._workbook_from_response(response)
+        self.assertEqual(workbook.sheetnames, ["ARS Data", "Summary", "MIC Summary"])
+        ids = [cell.value for cell in workbook["ARS Data"]["A"][1:]]
+        self.assertEqual(ids, ["RL260001", "RP260001"])
+        summary_rows = list(workbook["Summary"].iter_rows(values_only=True))
+        total_row = next(row for row in summary_rows if row[1] == "Total number of patients")
+        self.assertEqual(total_row[2:5], (1, 1, 0))
+        mic_rows = list(workbook["MIC Summary"].iter_rows(values_only=True))
+        self.assertIn(
+            ("Azithromycin MIC", "0.064", 1, 0, 0, 100, 0, 0),
+            mic_rows,
+        )
+
+    def test_uploaded_ars_list_generates_summary_sheets(self):
+        workbook = Workbook()
+        sheet = workbook.active
+        sheet.title = "ARS Data"
+        sheet.append([
+            "egasp_id", "clinic", "consult_date", "age",
+            "primary_antibiotic", "secondary_antibiotic",
+            "history_of_sex_partner", "abx_use_none",
+            "presence_gn_intracellular", "presence_gn_extracellular",
+            "culture_result", "azm_nm_val", "cfm_nm_val", "cro_nm_val",
+        ])
+        sheet.append([
+            "RL260001", "The Love Yourself - Victoria", date(2026, 9, 1), 21,
+            "CRO IM 1g", "DOX PO 100mg", "with Male", "No",
+            "Yes", "No", "Positive", "0.064", "", "<0.016",
+        ])
+        payload = BytesIO()
+        workbook.save(payload)
+        upload = SimpleUploadedFile(
+            "egasp-list.xlsx",
+            payload.getvalue(),
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+
+        response = self.client.post(
+            self.url, {"source": "upload", "report_file": upload}
+        )
+
+        self.assertEqual(response.status_code, 200)
+        result = self._workbook_from_response(response)
+        summary_rows = list(result["Summary"].iter_rows(values_only=True))
+        self.assertIn(
+            ("Primary antibiotic", "Ceftriaxone 1g", 1, 0, 0, 100, 0, 0),
+            summary_rows,
+        )
+        mic_rows = list(result["MIC Summary"].iter_rows(values_only=True))
+        self.assertIn(
+            ("Azithromycin MIC", "0.064", 1, 0, 0, 100, 0, 0),
+            mic_rows,
+        )
+
+    def test_database_report_rejects_reversed_date_range(self):
+        response = self.client.post(
+            self.url,
+            {
+                "source": "database",
+                "from_date": "2026-10-01",
+                "to_date": "2026-09-01",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "The start date must be on or before the end date.")
 
 
 class AntibioticUploadTests(TestCase):

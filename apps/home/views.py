@@ -37,6 +37,11 @@ from openpyxl import load_workbook
 from .utils import clean_date   # the date cleaner we made earlier
 from apps.authentication.decorators import admin_required
 from django.views.decorators.http import require_POST
+from django.utils.dateparse import parse_date
+from openpyxl.utils.exceptions import InvalidFileException
+from zipfile import BadZipFile
+
+from .reporting import build_report_workbook, rows_from_queryset, rows_from_upload
 
 @login_required(login_url="/login/")
 def index(request):
@@ -103,6 +108,62 @@ def index(request):
     }
 
     return render(request, 'home/index.html', context)
+
+
+@login_required(login_url="/login/")
+def monthly_report(request):
+    """Generate the ARS monthly workbook from an upload or Consult_Date range."""
+    context = {
+        "from_date": request.POST.get("from_date", ""),
+        "to_date": request.POST.get("to_date", ""),
+    }
+
+    if request.method == "POST":
+        try:
+            source = request.POST.get("source")
+            if source == "upload":
+                uploaded_file = request.FILES.get("report_file")
+                if not uploaded_file:
+                    raise ValueError("Choose an EGASP Excel list to generate the report.")
+                if not uploaded_file.name.lower().endswith(".xlsx"):
+                    raise ValueError("The uploaded EGASP list must be an .xlsx file.")
+                rows = rows_from_upload(uploaded_file)
+                report_label = "uploaded"
+            elif source == "database":
+                from_date = parse_date(context["from_date"])
+                to_date = parse_date(context["to_date"])
+                if not from_date or not to_date:
+                    raise ValueError("Select both the start date and end date.")
+                if from_date > to_date:
+                    raise ValueError(
+                        "The start date must be on or before the end date."
+                    )
+                queryset = Egasp_Data.objects.filter(
+                    Consult_Date__range=(from_date, to_date)
+                )
+                rows = rows_from_queryset(queryset)
+                report_label = f"{from_date:%Y%m%d}_{to_date:%Y%m%d}"
+            else:
+                raise ValueError("Choose a report source.")
+
+            payload = build_report_workbook(rows)
+            timestamp = timezone.localtime().strftime("%Y%m%d_%H%M%S")
+            response = HttpResponse(
+                payload,
+                content_type=(
+                    "application/vnd.openxmlformats-officedocument."
+                    "spreadsheetml.sheet"
+                ),
+            )
+            response["Content-Disposition"] = (
+                f'attachment; filename="EGASP_{report_label}_summary_ars_'
+                f'{timestamp}.xlsx"'
+            )
+            return response
+        except (ValueError, InvalidFileException, BadZipFile) as exc:
+            context["error"] = str(exc)
+
+    return render(request, "home/monthly_report.html", context)
 
 
 
@@ -1489,7 +1550,7 @@ def download_combined_table(request):
         'Symp_Painful_Urination', 'Symp_Painful_Intercourse', 'Symp_Rectal_Pain', 'Symp_Other',
         'Outcome_Of_Follow_Up_Visit', 'Prev_Test_Pos', 'Prev_Test_Pos_Date', 'Result_Test_Cure_Initial',
         'Result_Test_Cure_Followup', 'NoTOC_Other_Test', 'NoTOC_DatePerformed', 'NoTOC_Result_of_Test',
-        'Patient_Compliance_Antibiotics', 'OtherDrugs_Specify', 'OtherDrugs_Dosage', 'OtherDrugs_Route',
+        'Patient_Compliance_Antibiotics', 'Patient_Compliance_Comment', 'OtherDrugs_Specify', 'OtherDrugs_Dosage', 'OtherDrugs_Route',
         'OtherDrugs_Duration', 'Gonorrhea_Treatment', 'Treatment_Outcome', 'Primary_Antibiotic',
         'Primary_Abx_Other', 'Secondary_Antibiotic', 'Secondary_Abx_Other', 'Notes', 'Clinic_Staff',
         'Requesting_Physician', 'Telephone_Number', 'Email_Address', 'Date_Accomplished_Clinic',
@@ -2592,6 +2653,7 @@ def upload_egasp(request):
                         "NoTOC_DatePerformed": clean_date(row.get("NoTOC_DatePerformed")),
                         "NoTOC_Result_of_Test": row.get("NoTOC_Result_of_Test") or "",
                         "Patient_Compliance_Antibiotics": row.get("Patient_Compliance_Antibiotics") or "",
+                        "Patient_Compliance_Comment": row.get("Patient_Compliance_Comment") or "",
 
                         # =========================
                         # TREATMENT

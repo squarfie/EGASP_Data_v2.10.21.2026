@@ -1,0 +1,95 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %} Monthly Report {% endblock title %}
+
+{% block content %}
+<div class="header bg-primary pb-6">
+  <div class="container-fluid">
+    <div class="header-body">
+      <div class="row align-items-center py-4">
+        <div class="col-lg-8 col-12">
+          <h6 class="h2 text-white d-inline-block mb-0">Monthly EGASP Report</h6>
+          <p class="text-white-50 mb-0 mt-2">Generate the ARS Data, Summary, and MIC Summary workbook.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container-fluid mt--6">
+  {% if error %}
+  <div class="alert alert-danger alert-dismissible fade show" role="alert">
+    <span class="alert-icon"><i class="ni ni-fat-remove"></i></span>
+    <span class="alert-text"><strong>Report not generated.</strong> {{ error }}</span>
+    <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+  </div>
+  {% endif %}
+
+  <div class="row">
+    <div class="col-xl-6 mb-4">
+      <div class="card shadow h-100">
+        <div class="card-header border-0">
+          <div class="row align-items-center">
+            <div class="col-auto"><span class="avatar rounded-circle bg-gradient-info"><i class="ni ni-cloud-upload-96 text-white"></i></span></div>
+            <div class="col"><h3 class="mb-0">Upload an EGASP list</h3><small class="text-muted">Use an existing .xlsx export with an ARS Data sheet.</small></div>
+          </div>
+        </div>
+        <div class="card-body">
+          <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <input type="hidden" name="source" value="upload">
+            <div class="form-group">
+              <label for="report-file" class="form-control-label">EGASP Excel list</label>
+              <input type="file" class="form-control-file" id="report-file" name="report_file" accept=".xlsx" required>
+              <small class="form-text text-muted">The sheet must include at least the egasp_id and clinic columns.</small>
+            </div>
+            <button type="submit" class="btn btn-info btn-block">
+              <i class="ni ni-cloud-download-95 mr-2"></i>Generate uploaded-list report
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-6 mb-4">
+      <div class="card shadow h-100">
+        <div class="card-header border-0">
+          <div class="row align-items-center">
+            <div class="col-auto"><span class="avatar rounded-circle bg-gradient-success"><i class="ni ni-calendar-grid-58 text-white"></i></span></div>
+            <div class="col"><h3 class="mb-0">Generate from database</h3><small class="text-muted">Records are selected inclusively using Consult Date.</small></div>
+          </div>
+        </div>
+        <div class="card-body">
+          <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="source" value="database">
+            <div class="form-row">
+              <div class="form-group col-md-6">
+                <label for="from-date" class="form-control-label">Start date</label>
+                <input type="date" class="form-control" id="from-date" name="from_date" value="{{ from_date }}" required>
+              </div>
+              <div class="form-group col-md-6">
+                <label for="to-date" class="form-control-label">End date</label>
+                <input type="date" class="form-control" id="to-date" name="to_date" value="{{ to_date }}" required>
+              </div>
+            </div>
+            <button type="submit" class="btn btn-success btn-block">
+              <i class="ni ni-cloud-download-95 mr-2"></i>Generate date-range report
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card shadow mb-4">
+    <div class="card-body py-3">
+      <div class="d-flex align-items-center">
+        <i class="ni ni-bullet-list-67 text-primary mr-3"></i>
+        <small class="text-muted">The downloaded workbook will contain <strong>ARS Data</strong>, <strong>Summary</strong>, and <strong>MIC Summary</strong> sheets matching the monthly report structure.</small>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock content %}
+

@@ -15,6 +15,7 @@ urlpatterns = [
     path('', views.index, name='home'),
     path('crf/', views.crf_data,name='crf_data'),
     path('show/', views.show_data,name='show_data'),
+    path('reports/monthly/', views.monthly_report, name='monthly_report'),
     path('edit/<int:id>/',views.edit_data,name='edit_data'),
     path('delete/<int:id>/',views.delete_data,name='delete_data'),
     path('generate-pdf/<int:id>/', views.generate_pdf, name='generate_pdf'),
