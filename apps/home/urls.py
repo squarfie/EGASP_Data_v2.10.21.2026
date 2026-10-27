@@ -66,6 +66,8 @@ urlpatterns = [
     path('delete-all-egasp/', admin_required(views.delete_all_egasp), name='delete_all_egasp'),
     path('edit_city/<int:id>/', admin_required(views.edit_city), name='edit_city'),
     path('check-egasp-id/', views.check_egasp_id, name='check_egasp_id'),
+    path("reports/egasp-ids/arsp/", views.generate_arsp_report_by_ids, name="generate_arsp_report_by_ids",),
+    path("reports/egasp-ids/eb/",views.generate_eb_report_by_ids, name="generate_eb_report_by_ids",),
 
     # path("ajax/get-cities/", views.get_cities, name="get_cities"),
 

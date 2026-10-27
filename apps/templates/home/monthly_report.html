@@ -2,6 +2,17 @@
 
 {% block title %} Monthly Report {% endblock title %}
 
+{% block stylesheets%}
+<style>
+.btn-width {
+ width: 50%;
+}
+</style>
+{% endblock stylesheets%}
+
+
+
+
 {% block content %}
 <div class="header bg-primary pb-6">
   <div class="container-fluid">
@@ -9,7 +20,7 @@
       <div class="row align-items-center py-4">
         <div class="col-lg-8 col-12">
           <h6 class="h2 text-white d-inline-block mb-0">Monthly EGASP Report</h6>
-          <p class="text-white-50 mb-0 mt-2">Generate the ARS Data, Summary, and MIC Summary workbook.</p>
+          <p class="text-white-50 mb-0 mt-2 text-bold">Generate ARSP or EB Report.</p>
         </div>
       </div>
     </div>
@@ -31,21 +42,32 @@
         <div class="card-header border-0">
           <div class="row align-items-center">
             <div class="col-auto"><span class="avatar rounded-circle bg-gradient-info"><i class="ni ni-cloud-upload-96 text-white"></i></span></div>
-            <div class="col"><h3 class="mb-0">Upload an EGASP list</h3><small class="text-muted">Use an existing .xlsx export with an ARS Data sheet.</small></div>
+            <div class="col"><h3 class="mb-0">Upload an EGASP list</h3><small class="text-muted">Use an existing list with an ARS Data sheet.</small></div>
           </div>
         </div>
         <div class="card-body">
           <form method="post" enctype="multipart/form-data">
             {% csrf_token %}
             <input type="hidden" name="source" value="upload">
-            <div class="form-group">
-              <label for="report-file" class="form-control-label">EGASP Excel list</label>
-              <input type="file" class="form-control-file" id="report-file" name="report_file" accept=".xlsx" required>
-              <small class="form-text text-muted">The sheet must include at least the egasp_id and clinic columns.</small>
-            </div>
-            <!-- <button type="submit" class="btn btn-info btn-block">
-              <i class="ni ni-cloud-download-95 mr-2"></i>Generate uploaded-list report
-            </button> -->
+                    <div class="form-group">
+                        <label for="report-file" class="form-control-label">
+                            EGASP data file
+                        </label>
+
+                        <input
+                            type="file"
+                            class="form-control-file"
+                            id="report-file"
+                            name="report_file"
+                            accept=".xlsx,.csv,.tsv"
+                            required
+                        >
+
+                        <small class="form-text text-muted">
+                         Accepted formats: XLSX, CSV, and TSV.
+                            The file must include at least the egasp_id and clinic columns.
+                        </small>
+                    </div>
 
 
             <div class="row">
@@ -59,7 +81,6 @@
                         ARSP Report
                     </button>
                 </div>
-
                 <div class="col-md-6">
                     <button
                         type="submit"
@@ -71,8 +92,6 @@
                     </button>
                 </div>
             </div>
-
-
           </form>
         </div>
       </div>
@@ -111,7 +130,6 @@
                             name="report_style"
                             value="arsp"
                             class="btn btn-success btn-block">
-
                             <i class="fas fa-cloud-download-alt mr-1"></i>
                             ARSP Report
                         </button>
@@ -135,14 +153,228 @@
     </div>
   </div>
 
-  <div class="card shadow mb-4">
-    <div class="card-body py-3">
-      <div class="d-flex align-items-center">
-        <i class="ni ni-bullet-list-67 text-primary mr-3"></i>
-        <small class="text-muted">The downloaded workbook will contain <strong>ARS Data</strong>, <strong>Summary</strong>, and <strong>MIC Summary</strong> sheets matching the monthly report structure.</small>
-      </div>
+
+<div class="row">
+    <div class="col-xl-6 mb-4">
+        <div class="card shadow h-100">
+            <!-- =====================================================
+                 CARD HEADER
+            ====================================================== -->
+            <div class="card-header border-0">
+                <div class="row align-items-center">
+                    <div class="col-auto">
+                        <span class="avatar rounded-circle bg-gradient-warning">
+                            <i class="ni ni-bullet-list-67 text-white"></i>
+                        </span>
+                    </div>
+                    <div class="col">
+                        <h3 class="mb-0">
+                            Generate by EGASP ID
+                        </h3>
+                        <small class="text-muted">
+                            Enter EGASP IDs to match in the database and generate a report.
+                        </small>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- =====================================================
+                 CARD BODY
+            ====================================================== -->
+            <div class="card-body">
+
+                <p class="text-muted mb-4">
+                <span style="font-size: 14px;">
+                    Enter one or more EGASP IDs separated by commas,
+                    or copy and paste EGASP IDs directly from Excel.
+            </span>
+                    <br>
+
+                    <small>
+                        Example:
+                        <strong>
+                            RL260166, RL260167, RL260168
+                        </strong>
+                    </small>
+
+                </p>
+
+
+                <!-- OPEN MODAL BUTTON -->
+                    <button
+                        type="button"
+                        class="btn btn-warning btn-block btn-width"
+                        data-toggle="modal"
+                        data-target="#egaspIdReportModal"
+                    >
+                        <i class="fa fa-bar-chart" aria-hidden="true"></i>
+                       Generate Report
+                    </button>
+            </div>
+        </div>
+    </div>
+<!-- =============================================================
+     EGASP ID REPORT DIALOG
+============================================================= -->
+
+<div
+    class="modal fade"
+    id="egaspIdReportModal"
+    tabindex="-1"
+    role="dialog"
+    aria-labelledby="egaspIdReportModalLabel"
+    aria-hidden="true"
+>
+
+    <div
+        class="modal-dialog modal-lg modal-dialog-centered"
+        role="document"
+    >
+        <div class="modal-content">
+
+                    {% if messages %}
+                            {% for message in messages %}
+                                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                    <i class="fas fa-exclamation-triangle mr-1"></i>
+                                    {{ message }}
+
+                                    <button
+                                        type="button"
+                                        class="close"
+                                        data-dismiss="alert"
+                                        aria-label="Close"
+                                    >
+                                        <span aria-hidden="true">&times;</span>
+                                    </button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+
+
+
+            <form method="post">
+                {% csrf_token %}
+                <!-- =================================================
+                     MODAL HEADER
+                ================================================== -->
+                <div class="modal-header">
+                    <div>
+                        <h4
+                            class="modal-title mb-1"
+                            id="egaspIdReportModalLabel"
+                        >
+                            Generate Report by EGASP ID
+                        </h4>
+                        <small class="text-muted">
+                            Copy and paste the EGASP IDs you want to include.
+                        </small>
+                    </div>
+                    <button
+                        type="button"
+                        class="close"
+                        data-dismiss="modal"
+                        aria-label="Close"
+                    >
+                        <span aria-hidden="true">
+                            &times;
+                        </span>
+                    </button>
+
+                </div>
+                <!-- =================================================
+                     MODAL BODY
+                ================================================== -->
+                <div class="modal-body">
+
+                    <div class="form-group">
+
+                        <label
+                            for="report-egasp-ids"
+                            class="form-control-label"
+                        >
+                            EGASP IDs
+                        </label>
+                        <textarea
+                            id="report-egasp-ids"
+                            name="egasp_ids"
+                            class="form-control"
+                            rows="12"
+                            required
+                            spellcheck="false"
+                            placeholder="Paste EGASP IDs here...
+
+                            Example:
+
+                            RL260166
+                            RL260167
+                            RL260168
+                            RL260169"></textarea>
+                        <small class="form-text text-muted mt-2">
+                            You may paste IDs directly from an Excel column
+                            or separate them using commas.
+                        </small>
+                    </div>
+
+                </div>
+
+
+                <!-- =================================================
+                     MODAL FOOTER
+                ================================================== -->
+                <div class="modal-footer">
+                    <button
+                        type="button"
+                        class="btn btn-secondary"
+                        data-dismiss="modal" >
+                        Cancel
+                    </button>
+                    <!-- ARSP REPORT -->
+                    <button
+                        type="submit"
+                        class="btn btn-warning"
+                        formaction="{% url 'generate_arsp_report_by_ids' %}"
+                    >
+                        <i class="fas fa-file-excel mr-1"></i>
+                        ARSP Report
+                    </button>
+                    <!-- EB REPORT -->
+                    <button
+                        type="submit"
+                        class="btn btn-primary"
+                        formaction="{% url 'generate_eb_report_by_ids' %}"
+                    >
+                        <i class="fas fa-file-excel mr-1"></i>
+                        EB Report
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    </div>
+</div>
+
+
+<div class="card shadow mb-4">
+  <div class="card-body py-3">
+    <div class="d-flex align-items-center">
+      <i class="ni ni-bullet-list-67 text-primary mr-3"></i>
+
+      <small class="text-muted">
+        Reports are generated using the selected format.
+        <strong>ARSP Report</strong> includes the
+        <strong>ARS Data</strong>,
+        <strong>Summary</strong>, and
+        <strong>MIC Summary</strong> sheets,
+        while the <strong>EB Report</strong> contains the
+        EB-formatted data sheet only.
+      </small>
     </div>
   </div>
+</div>
 </div>
 {% endblock content %}
 

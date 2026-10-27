@@ -2,13 +2,18 @@ import re
 from collections import Counter
 from datetime import date, datetime
 from decimal import Decimal
-from io import BytesIO
+from io import BytesIO, StringIO
 
 from openpyxl import Workbook, load_workbook
 from openpyxl.worksheet.table import Table, TableStyleInfo
 from openpyxl.utils import get_column_letter
 
 from .models import Egasp_Data
+from django.contrib.auth.decorators import login_required
+from django.db.models import Case, When, IntegerField
+import csv
+
+
 
 
 CLINICS = ("TLY", "PSH", "TSH")
@@ -314,28 +319,154 @@ def rows_from_queryset_eb(queryset):
 
 
 
+# def rows_from_upload(uploaded_file):
+#     workbook = load_workbook(uploaded_file, read_only=True, data_only=True)
+#     sheet = workbook["ARS Data"] if "ARS Data" in workbook.sheetnames else workbook.active
+#     values = sheet.iter_rows(values_only=True)
+#     try:
+#         headers = [clean_header(value) for value in next(values)]
+#     except StopIteration as exc:
+#         raise ValueError("The uploaded workbook is empty.") from exc
+#     if "egasp_id" not in headers or "clinic" not in headers:
+#         raise ValueError("The uploaded list must include egasp_id and clinic columns.")
+#     rows = []
+#     for values_row in values:
+#         if not any(value not in (None, "") for value in values_row):
+#             continue
+#         row = {header: clean_value(value) for header, value in zip(headers, values_row) if header}
+#         row["age_range"] = row.get("age_range") or age_band(row.get("age"))
+#         rows.append(row)
+#     return rows
+
+
+
+
+
 def rows_from_upload(uploaded_file):
-    workbook = load_workbook(uploaded_file, read_only=True, data_only=True)
-    sheet = workbook["ARS Data"] if "ARS Data" in workbook.sheetnames else workbook.active
-    values = sheet.iter_rows(values_only=True)
-    try:
-        headers = [clean_header(value) for value in next(values)]
-    except StopIteration as exc:
-        raise ValueError("The uploaded workbook is empty.") from exc
-    if "egasp_id" not in headers or "clinic" not in headers:
-        raise ValueError("The uploaded list must include egasp_id and clinic columns.")
+    filename = uploaded_file.name.lower()
+
+    # =========================================================
+    # XLSX
+    # =========================================================
+    if filename.endswith(".xlsx"):
+
+        workbook = load_workbook(
+            uploaded_file,
+            read_only=True,
+            data_only=True,
+        )
+
+        sheet = (
+            workbook["ARS Data"]
+            if "ARS Data" in workbook.sheetnames
+            else workbook.active
+        )
+
+        values = sheet.iter_rows(values_only=True)
+
+        try:
+            headers = [
+                clean_header(value)
+                for value in next(values)
+            ]
+        except StopIteration as exc:
+            raise ValueError(
+                "The uploaded workbook is empty."
+            ) from exc
+
+        data_rows = values
+
+    # =========================================================
+    # CSV / TSV
+    # =========================================================
+    elif filename.endswith((".csv", ".tsv")):
+
+        try:
+            uploaded_file.seek(0)
+
+            text = uploaded_file.read().decode(
+                "utf-8-sig"
+            )
+
+        except UnicodeDecodeError as exc:
+            raise ValueError(
+                "The uploaded CSV/TSV file must use UTF-8 encoding."
+            ) from exc
+
+        delimiter = (
+            "\t"
+            if filename.endswith(".tsv")
+            else ","
+        )
+
+        reader = csv.reader(
+            StringIO(text),
+            delimiter=delimiter,
+        )
+
+        try:
+            headers = [
+                clean_header(value)
+                for value in next(reader)
+            ]
+        except StopIteration as exc:
+            raise ValueError(
+                "The uploaded file is empty."
+            ) from exc
+
+        data_rows = reader
+
+    # =========================================================
+    # UNSUPPORTED
+    # =========================================================
+    else:
+        raise ValueError(
+            "Unsupported file type. "
+            "Upload an XLSX, CSV, or TSV file."
+        )
+
+    # =========================================================
+    # REQUIRED COLUMNS
+    # =========================================================
+    if (
+        "egasp_id" not in headers
+        or "clinic" not in headers
+    ):
+        raise ValueError(
+            "The uploaded list must include "
+            "egasp_id and clinic columns."
+        )
+
+    # =========================================================
+    # BUILD ROW DICTIONARIES
+    # =========================================================
     rows = []
-    for values_row in values:
-        if not any(value not in (None, "") for value in values_row):
+
+    for values_row in data_rows:
+
+        if not any(
+            value not in (None, "")
+            for value in values_row
+        ):
             continue
-        row = {header: clean_value(value) for header, value in zip(headers, values_row) if header}
-        row["age_range"] = row.get("age_range") or age_band(row.get("age"))
+
+        row = {
+            header: clean_value(value)
+            for header, value in zip(
+                headers,
+                values_row,
+            )
+            if header
+        }
+
+        row["age_range"] = (
+            row.get("age_range")
+            or age_band(row.get("age"))
+        )
+
         rows.append(row)
+
     return rows
-
-
-
-
 
 
 def _clinic(row):
@@ -637,3 +768,66 @@ def build_eb_report_workbook(rows):
     return output.getvalue()
 
 ####################### end of eb workbook ##################
+
+
+
+
+################# Match egasp_id from database ##############
+
+
+def _parse_egasp_ids(raw_ids):
+    """
+    Accepts:
+        RL260166, RL260167, RL260168
+
+    or values pasted directly from an Excel column:
+        RL260166
+        RL260167
+        RL260168
+    """
+
+    values = re.split(r"[,\s]+", raw_ids or "")
+
+    egasp_ids = []
+
+    for value in values:
+        egasp_id = value.strip().upper()
+
+        if egasp_id and egasp_id not in egasp_ids:
+            egasp_ids.append(egasp_id)
+
+    return egasp_ids
+
+
+
+def _get_egasp_queryset_in_order(egasp_ids):
+    ordering = Case(
+        *[
+            When(
+                Egasp_Id=egasp_id,
+                then=position,
+            )
+            for position, egasp_id in enumerate(egasp_ids)
+        ],
+        output_field=IntegerField(),
+    )
+
+    queryset = (
+        Egasp_Data.objects
+        .filter(Egasp_Id__in=egasp_ids)
+        .order_by(ordering)
+    )
+
+    found_ids = set(
+        queryset.values_list("Egasp_Id", flat=True)
+    )
+
+    missing_ids = [
+        egasp_id
+        for egasp_id in egasp_ids
+        if egasp_id not in found_ids
+    ]
+
+    return queryset, missing_ids
+
+

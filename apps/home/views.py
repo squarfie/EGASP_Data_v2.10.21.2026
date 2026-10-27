@@ -32,7 +32,7 @@ from django.db.models import Q
 from django.db import transaction
 from django.utils.timezone import now
 import csv
-from io import TextIOWrapper
+from io import TextIOWrapper, StringIO
 from openpyxl import load_workbook
 from .utils import clean_date   # the date cleaner we made earlier
 from apps.authentication.decorators import admin_required
@@ -41,7 +41,11 @@ from django.utils.dateparse import parse_date
 from openpyxl.utils.exceptions import InvalidFileException
 from zipfile import BadZipFile
 
-from .reporting import build_report_workbook, rows_from_queryset, rows_from_upload, build_eb_report_workbook, rows_from_queryset_eb
+from django.http import HttpResponse
+from django.utils import timezone
+
+
+from .reporting import build_report_workbook, rows_from_queryset, rows_from_upload, build_eb_report_workbook, rows_from_queryset_eb, _parse_egasp_ids, _get_egasp_queryset_in_order, EB_HEADERS, ARS_HEADERS
 
 @login_required(login_url="/login/")
 def index(request):
@@ -110,10 +114,12 @@ def index(request):
     return render(request, 'home/index.html', context)
 
 
-#GENERATES ONLY ARSP STYLE REPORT
+
+# GENERATES BOTH ARSP AND EB STYLE REPORT
 # @login_required(login_url="/login/")
 # def monthly_report(request):
-#     """Generate the ARS monthly workbook from an upload or Consult_Date range."""
+#     """Generate ARSP-style or EB-style EGASP workbook from upload or date range."""
+
 #     context = {
 #         "from_date": request.POST.get("from_date", ""),
 #         "to_date": request.POST.get("to_date", ""),
@@ -122,36 +128,80 @@ def index(request):
 #     if request.method == "POST":
 #         try:
 #             source = request.POST.get("source")
+#             report_style = request.POST.get("report_style", "arsp")
+
+#             # =========================================================
+#             # UPLOADED EXCEL FILE
+#             # =========================================================
 #             if source == "upload":
 #                 uploaded_file = request.FILES.get("report_file")
+
 #                 if not uploaded_file:
-#                     raise ValueError("Choose an EGASP Excel list to generate the report.")
+#                     raise ValueError(
+#                         "Choose an EGASP Excel list to generate the report."
+#                     )
+
 #                 if not uploaded_file.name.lower().endswith(".xlsx"):
-#                     raise ValueError("The uploaded EGASP list must be an .xlsx file.")
+#                     raise ValueError(
+#                         "The uploaded EGASP list must be an .xlsx file."
+#                     )
+
+#                 # Same uploaded rows can be used by either report style
 #                 rows = rows_from_upload(uploaded_file)
+
 #                 report_label = "uploaded"
 
-
-
+#             # =========================================================
+#             # DATABASE / DATE RANGE
+#             # =========================================================
 #             elif source == "database":
 #                 from_date = parse_date(context["from_date"])
 #                 to_date = parse_date(context["to_date"])
+
 #                 if not from_date or not to_date:
-#                     raise ValueError("Select both the start date and end date.")
+#                     raise ValueError(
+#                         "Select both the start date and end date."
+#                     )
+
 #                 if from_date > to_date:
 #                     raise ValueError(
 #                         "The start date must be on or before the end date."
 #                     )
+
 #                 queryset = Egasp_Data.objects.filter(
 #                     Consult_Date__range=(from_date, to_date)
 #                 )
-#                 rows = rows_from_queryset(queryset)
-#                 report_label = f"{from_date:%Y%m%d}_{to_date:%Y%m%d}"
+
+#                 # Build rows depending on report style
+#                 if report_style == "eb":
+#                     rows = rows_from_queryset_eb(queryset)
+#                 else:
+#                     rows = rows_from_queryset(queryset)
+
+#                 report_label = (
+#                     f"{from_date:%Y%m%d}_{to_date:%Y%m%d}"
+#                 )
+
 #             else:
 #                 raise ValueError("Choose a report source.")
 
-#             payload = build_report_workbook(rows)
-#             timestamp = timezone.localtime().strftime("%Y%m%d_%H%M%S")
+#             # =========================================================
+#             # BUILD THE SELECTED WORKBOOK
+#             # =========================================================
+#             if report_style == "eb":
+#                 payload = build_eb_report_workbook(rows)
+#                 style_label = "eb"
+#             else:
+#                 payload = build_report_workbook(rows)
+#                 style_label = "ars"
+
+#             # =========================================================
+#             # DOWNLOAD RESPONSE
+#             # =========================================================
+#             timestamp = timezone.localtime().strftime(
+#                 "%Y%m%d_%H%M%S"
+#             )
+
 #             response = HttpResponse(
 #                 payload,
 #                 content_type=(
@@ -159,21 +209,50 @@ def index(request):
 #                     "spreadsheetml.sheet"
 #                 ),
 #             )
+
 #             response["Content-Disposition"] = (
-#                 f'attachment; filename="EGASP_{report_label}_summary_ars_'
-#                 f'{timestamp}.xlsx"'
+#                 f'attachment; filename="EGASP_{report_label}_'
+#                 f'{style_label}_{timestamp}.xlsx"'
 #             )
+
 #             return response
-#         except (ValueError, InvalidFileException, BadZipFile) as exc:
+
+#         except (
+#             ValueError,
+#             InvalidFileException,
+#             BadZipFile,
+#         ) as exc:
 #             context["error"] = str(exc)
 
-#     return render(request, "home/monthly_report.html", context)
+#     return render(
+#         request,
+#         "home/monthly_report.html",
+#         context,
+#     )
+
+
+
+
+
+
+
+
 
 
 # GENERATES BOTH ARSP AND EB STYLE REPORT
+# OUTPUT FORMATS: XLSX, CSV, TSV
+
 @login_required(login_url="/login/")
 def monthly_report(request):
-    """Generate ARSP-style or EB-style EGASP workbook from upload or date range."""
+    """
+    Generate ARSP-style or EB-style EGASP reports
+    from an uploaded workbook or database date range.
+
+    Supported output formats:
+        - XLSX
+        - CSV
+        - TSV
+    """
 
     context = {
         "from_date": request.POST.get("from_date", ""),
@@ -183,91 +262,235 @@ def monthly_report(request):
     if request.method == "POST":
         try:
             source = request.POST.get("source")
-            report_style = request.POST.get("report_style", "arsp")
+            report_style = request.POST.get(
+                "report_style",
+                "arsp"
+            ).lower()
 
-            # =========================================================
+            report_format = request.POST.get(
+                "report_format",
+                "xlsx"
+            ).lower()
+
+            # Validate output format
+            if report_format not in ("xlsx", "csv", "tsv"):
+                raise ValueError(
+                    "Invalid report format. "
+                    "Choose XLSX, CSV, or TSV."
+                )
+
+            # =====================================================
             # UPLOADED EXCEL FILE
-            # =========================================================
+            # =====================================================
             if source == "upload":
-                uploaded_file = request.FILES.get("report_file")
+
+                uploaded_file = request.FILES.get(
+                    "report_file"
+                )
 
                 if not uploaded_file:
                     raise ValueError(
-                        "Choose an EGASP Excel list to generate the report."
+                        "Choose an EGASP list "
+                        "to generate the report."
                     )
 
-                if not uploaded_file.name.lower().endswith(".xlsx"):
+                filename = uploaded_file.name.lower()
+
+                if not filename.endswith((".xlsx", ".csv", ".tsv")):
                     raise ValueError(
-                        "The uploaded EGASP list must be an .xlsx file."
+                        "The uploaded EGASP list must be an XLSX, CSV, or TSV file."
                     )
-
-                # Same uploaded rows can be used by either report style
-                rows = rows_from_upload(uploaded_file)
+                # Uploaded rows can be used for both styles
+                rows = rows_from_upload(
+                    uploaded_file
+                )
 
                 report_label = "uploaded"
 
-            # =========================================================
+            # =====================================================
             # DATABASE / DATE RANGE
-            # =========================================================
+            # =====================================================
             elif source == "database":
-                from_date = parse_date(context["from_date"])
-                to_date = parse_date(context["to_date"])
+
+                from_date = parse_date(
+                    context["from_date"]
+                )
+
+                to_date = parse_date(
+                    context["to_date"]
+                )
 
                 if not from_date or not to_date:
                     raise ValueError(
-                        "Select both the start date and end date."
+                        "Select both the start date "
+                        "and end date."
                     )
 
                 if from_date > to_date:
                     raise ValueError(
-                        "The start date must be on or before the end date."
+                        "The start date must be on "
+                        "or before the end date."
                     )
 
                 queryset = Egasp_Data.objects.filter(
-                    Consult_Date__range=(from_date, to_date)
+                    Consult_Date__range=(
+                        from_date,
+                        to_date
+                    )
                 )
 
-                # Build rows depending on report style
+                # Build rows depending on selected style
                 if report_style == "eb":
-                    rows = rows_from_queryset_eb(queryset)
+
+                    rows = rows_from_queryset_eb(
+                        queryset
+                    )
+
                 else:
-                    rows = rows_from_queryset(queryset)
+
+                    rows = rows_from_queryset(
+                        queryset
+                    )
 
                 report_label = (
-                    f"{from_date:%Y%m%d}_{to_date:%Y%m%d}"
+                    f"{from_date:%Y%m%d}_"
+                    f"{to_date:%Y%m%d}"
                 )
 
             else:
-                raise ValueError("Choose a report source.")
+                raise ValueError(
+                    "Choose a report source."
+                )
 
-            # =========================================================
-            # BUILD THE SELECTED WORKBOOK
-            # =========================================================
+            # =====================================================
+            # REPORT STYLE
+            # =====================================================
             if report_style == "eb":
-                payload = build_eb_report_workbook(rows)
+
+                export_headers = EB_HEADERS
                 style_label = "eb"
+
             else:
-                payload = build_report_workbook(rows)
+
+                export_headers = ARS_HEADERS
                 style_label = "ars"
 
-            # =========================================================
-            # DOWNLOAD RESPONSE
-            # =========================================================
             timestamp = timezone.localtime().strftime(
                 "%Y%m%d_%H%M%S"
             )
 
+            # =====================================================
+            # XLSX OUTPUT
+            # =====================================================
+            if report_format == "xlsx":
+
+                if report_style == "eb":
+
+                    # EB workbook:
+                    # EB Data only
+                    payload = (
+                        build_eb_report_workbook(
+                            rows
+                        )
+                    )
+
+                else:
+
+                    # ARSP workbook:
+                    # ARS Data
+                    # Summary
+                    # MIC Summary
+                    payload = (
+                        build_report_workbook(
+                            rows
+                        )
+                    )
+
+                response = HttpResponse(
+                    payload,
+                    content_type=(
+                        "application/vnd."
+                        "openxmlformats-officedocument."
+                        "spreadsheetml.sheet"
+                    ),
+                )
+
+                response["Content-Disposition"] = (
+                    f'attachment; filename="'
+                    f'EGASP_{report_label}_'
+                    f'{style_label}_'
+                    f'{timestamp}.xlsx"'
+                )
+
+                return response
+
+            # =====================================================
+            # CSV / TSV OUTPUT
+            # =====================================================
+            delimiter = (
+                ","
+                if report_format == "csv"
+                else "\t"
+            )
+
+            output = StringIO()
+
+            writer = csv.writer(
+                output,
+                delimiter=delimiter,
+                quoting=csv.QUOTE_MINIMAL,
+                lineterminator="\n",
+            )
+
+            # Write headers
+            writer.writerow(
+                export_headers
+            )
+
+            # Write report rows
+            for row in rows:
+
+                writer.writerow([
+                    row.get(header, "")
+                    for header in export_headers
+                ])
+
+            # Add UTF-8 BOM so Excel handles
+            # Unicode characters properly
+            payload = (
+                "\ufeff"
+                + output.getvalue()
+            )
+
+            # =====================================================
+            # CSV RESPONSE
+            # =====================================================
+            if report_format == "csv":
+
+                content_type = (
+                    "text/csv; charset=utf-8"
+                )
+
+            # =====================================================
+            # TSV RESPONSE
+            # =====================================================
+            else:
+
+                content_type = (
+                    "text/tab-separated-values; "
+                    "charset=utf-8"
+                )
+
             response = HttpResponse(
                 payload,
-                content_type=(
-                    "application/vnd.openxmlformats-officedocument."
-                    "spreadsheetml.sheet"
-                ),
+                content_type=content_type,
             )
 
             response["Content-Disposition"] = (
-                f'attachment; filename="EGASP_{report_label}_'
-                f'{style_label}_{timestamp}.xlsx"'
+                f'attachment; filename="'
+                f'EGASP_{report_label}_'
+                f'{style_label}_'
+                f'{timestamp}.{report_format}"'
             )
 
             return response
@@ -277,6 +500,7 @@ def monthly_report(request):
             InvalidFileException,
             BadZipFile,
         ) as exc:
+
             context["error"] = str(exc)
 
     return render(
@@ -284,6 +508,7 @@ def monthly_report(request):
         "home/monthly_report.html",
         context,
     )
+
 
 ###################################
 
@@ -3265,3 +3490,239 @@ def check_egasp_id(request):
     return JsonResponse({
         'exists': exists
     })
+
+
+########### gemerate by dialoag boxes ############
+# @login_required(login_url="/login/")
+# def generate_arsp_report_by_ids(request):
+#     """
+#     Generate the normal ARSP-style workbook using comma-separated
+#     EGASP IDs.
+#     """
+
+#     if request.method != "POST":
+#         return HttpResponse(
+#             "POST request required.",
+#             status=405,
+#         )
+
+#     raw_ids = request.POST.get("egasp_ids", "")
+
+#     egasp_ids = _parse_egasp_ids(raw_ids)
+
+#     if not egasp_ids:
+#         return HttpResponse(
+#             "Enter at least one EGASP ID.",
+#             status=400,
+#         )
+
+#     queryset = _get_egasp_queryset_in_order(
+#         egasp_ids
+#     )
+
+#     if not queryset.exists():
+#         return HttpResponse(
+#             "None of the entered EGASP IDs were found.",
+#             status=404,
+#         )
+
+#     rows = rows_from_queryset(queryset)
+
+#     payload = build_report_workbook(rows)
+
+#     timestamp = timezone.localtime().strftime(
+#         "%Y%m%d_%H%M%S"
+#     )
+
+#     response = HttpResponse(
+#         payload,
+#         content_type=(
+#             "application/vnd.openxmlformats-officedocument."
+#             "spreadsheetml.sheet"
+#         ),
+#     )
+
+#     response["Content-Disposition"] = (
+#         f'attachment; '
+#         f'filename="EGASP_selected_ids_ars_{timestamp}.xlsx"'
+#     )
+
+#     return response
+
+
+# @login_required(login_url="/login/")
+# def generate_eb_report_by_ids(request):
+#     """
+#     Generate the EB-style workbook using comma-separated
+#     EGASP IDs.
+#     """
+
+#     if request.method != "POST":
+#         return HttpResponse(
+#             "POST request required.",
+#             status=405,
+#         )
+
+#     raw_ids = request.POST.get("egasp_ids", "")
+
+#     egasp_ids = _parse_egasp_ids(raw_ids)
+
+#     if not egasp_ids:
+#         return HttpResponse(
+#             "Enter at least one EGASP ID.",
+#             status=400,
+#         )
+
+#     queryset = _get_egasp_queryset_in_order(
+#         egasp_ids
+#     )
+
+#     if not queryset.exists():
+#         return HttpResponse(
+#             "None of the entered EGASP IDs were found.",
+#             status=404,
+#         )
+
+#     rows = rows_from_queryset_eb(queryset)
+
+#     payload = build_eb_report_workbook(rows)
+
+#     timestamp = timezone.localtime().strftime(
+#         "%Y%m%d_%H%M%S"
+#     )
+
+#     response = HttpResponse(
+#         payload,
+#         content_type=(
+#             "application/vnd.openxmlformats-officedocument."
+#             "spreadsheetml.sheet"
+#         ),
+#     )
+
+#     response["Content-Disposition"] = (
+#         f'attachment; '
+#         f'filename="EGASP_selected_ids_eb_{timestamp}.xlsx"'
+#     )
+
+#     return response
+
+
+
+@login_required(login_url="/login/")
+def generate_arsp_report_by_ids(request):
+
+    if request.method != "POST":
+        return HttpResponse(
+            "POST request required.",
+            status=405,
+        )
+
+    raw_ids = request.POST.get("egasp_ids", "")
+    egasp_ids = _parse_egasp_ids(raw_ids)
+
+    if not egasp_ids:
+        return HttpResponse(
+            "Enter at least one EGASP ID.",
+            status=400,
+        )
+
+    # Match the entered IDs against the DATABASE
+    queryset = Egasp_Data.objects.filter(
+        Egasp_Id__in=egasp_ids
+    )
+
+    if not queryset.exists():
+        messages.error(
+            request,
+            "None of the entered EGASP IDs were found in the database."
+        )
+
+        return redirect(
+            f"{reverse('monthly_report')}?open_egasp_modal=1"
+        )
+
+    # Generate normal ARSP rows
+    rows = rows_from_queryset(queryset)
+
+    # ARSP workbook:
+    # ARS Data + Summary + MIC Summary
+    payload = build_report_workbook(rows)
+
+    timestamp = timezone.localtime().strftime(
+        "%Y%m%d_%H%M%S"
+    )
+
+    response = HttpResponse(
+        payload,
+        content_type=(
+            "application/vnd.openxmlformats-officedocument."
+            "spreadsheetml.sheet"
+        ),
+    )
+
+    response["Content-Disposition"] = (
+        f'attachment; filename="'
+        f'EGASP_selected_ids_ars_{timestamp}.xlsx"'
+    )
+
+    return response
+
+
+@login_required(login_url="/login/")
+def generate_eb_report_by_ids(request):
+
+    if request.method != "POST":
+        return HttpResponse(
+            "POST request required.",
+            status=405,
+        )
+
+    raw_ids = request.POST.get("egasp_ids", "")
+    egasp_ids = _parse_egasp_ids(raw_ids)
+
+    if not egasp_ids:
+        return HttpResponse(
+            "Enter at least one EGASP ID.",
+            status=400,
+        )
+
+    # Match the entered IDs against the DATABASE
+    queryset = Egasp_Data.objects.filter(
+        Egasp_Id__in=egasp_ids
+    )
+
+    if not queryset.exists():
+        messages.error(
+            request,
+            "None of the entered EGASP IDs were found in the database."
+        )
+
+        return redirect(
+            f"{reverse('monthly_report')}?open_egasp_modal=1"
+        )
+
+    # Generate EB-specific rows
+    rows = rows_from_queryset_eb(queryset)
+
+    # EB workbook:
+    # EB Data sheet ONLY
+    payload = build_eb_report_workbook(rows)
+
+    timestamp = timezone.localtime().strftime(
+        "%Y%m%d_%H%M%S"
+    )
+
+    response = HttpResponse(
+        payload,
+        content_type=(
+            "application/vnd.openxmlformats-officedocument."
+            "spreadsheetml.sheet"
+        ),
+    )
+
+    response["Content-Disposition"] = (
+        f'attachment; filename="'
+        f'EGASP_selected_ids_eb_{timestamp}.xlsx"'
+    )
+
+    return response
