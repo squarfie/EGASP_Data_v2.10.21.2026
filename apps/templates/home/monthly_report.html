@@ -43,9 +43,36 @@
               <input type="file" class="form-control-file" id="report-file" name="report_file" accept=".xlsx" required>
               <small class="form-text text-muted">The sheet must include at least the egasp_id and clinic columns.</small>
             </div>
-            <button type="submit" class="btn btn-info btn-block">
+            <!-- <button type="submit" class="btn btn-info btn-block">
               <i class="ni ni-cloud-download-95 mr-2"></i>Generate uploaded-list report
-            </button>
+            </button> -->
+
+
+            <div class="row">
+                <div class="col-md-6">
+                    <button
+                        type="submit"
+                        name="report_style"
+                        value="arsp"
+                        class="btn btn-info btn-block">
+                        <i class="fas fa-cloud-download-alt mr-1"></i>
+                        ARSP Report
+                    </button>
+                </div>
+
+                <div class="col-md-6">
+                    <button
+                        type="submit"
+                        name="report_style"
+                        value="eb"
+                        class="btn btn-primary btn-block">
+                        <i class="fas fa-file-excel mr-1"></i>
+                        EB Report
+                    </button>
+                </div>
+            </div>
+
+
           </form>
         </div>
       </div>
@@ -73,9 +100,35 @@
                 <input type="date" class="form-control" id="to-date" name="to_date" value="{{ to_date }}" required>
               </div>
             </div>
-            <button type="submit" class="btn btn-success btn-block">
+            <!-- <button type="submit" class="btn btn-success btn-block">
               <i class="ni ni-cloud-download-95 mr-2"></i>Generate date-range report
-            </button>
+            </button> -->
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <button
+                            type="submit"
+                            name="report_style"
+                            value="arsp"
+                            class="btn btn-success btn-block">
+
+                            <i class="fas fa-cloud-download-alt mr-1"></i>
+                            ARSP Report
+                        </button>
+                    </div>
+
+                    <div class="col-md-6">
+                        <button
+                            type="submit"
+                            name="report_style"
+                            value="eb"
+                            class="btn btn-primary btn-block">
+                            <i class="fas fa-file-excel mr-1"></i>
+                            EB Report
+                        </button>
+                    </div>
+                </div>
+
           </form>
         </div>
       </div>

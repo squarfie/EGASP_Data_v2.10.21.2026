@@ -1,451 +1,836 @@
-# EGASP Project
-This project is the EGASP Database. Below is the guide to set up the project on your local machine.
+# EGASP Database
 
+**Enhanced Gonococcal Antimicrobial Surveillance Program (EGASP) Database**
 
-# Getting Started
+A Django-based data management system for encoding, managing, validating, reporting, and exporting EGASP surveillance data.
 
+> Repository: `https://github.com/squarfie/EGASP_Data_v2.10.21.2026`
 
-1. Open terminal and Clone the Repository
+---
 
-Start by cloning the repository from GitHub:
-git clone https://github.com/squarfie/EGASP_project.git
+## Overview
 
-2. Create a Virtual Environment
-Once the repository is cloned, navigate to the project directory and create a Python virtual environment. This will isolate the dependencies for the project.
+The EGASP Database supports the management of surveillance records collected under the Enhanced Gonococcal Antimicrobial Surveillance Program.
 
+The system provides tools for:
 
-cd egasp_project
-python -m venv egasp  # or customize the name of your virtual environment
+- EGASP case and CRF data management
+- Antibiotic susceptibility data management
+- Breakpoint and reference-table configuration
+- Clinic, specimen, city, and staff reference data
+- User authentication and role-based access
+- Data upload and download
+- Monthly EGASP reporting
+- ARS Data, Summary, and MIC Summary Excel generation
+- Dashboard summaries and record counts
+- Administrative account management
+- Password recovery/reset
+- Optional Google sign-in integration
 
-3. Activate the Virtual Environment
-Activate the virtual environment. The activation command depends on your operating system:
+The application is built with **Python**, **Django**, and **PostgreSQL**, with support for deployment using Gunicorn/Nginx or another compatible WSGI hosting environment.
 
-Windows:
+---
 
+## Technology Stack
+
+### Backend
+
+- Python
+- Django
+- PostgreSQL
+- SQLAlchemy
+- pandas
+- openpyxl
+- psycopg2
+- python-decouple
+
+### Frontend
+
+- HTML5
+- CSS
+- JavaScript
+- Bootstrap / Argon Dashboard components
+- AJAX where applicable
+
+### Production / Deployment
+
+- Gunicorn
+- Nginx
+- Docker / Docker Compose
+- WhiteNoise for static-file support where configured
+
+---
+
+## Main Features
+
+### Dashboard
+
+The dashboard provides a quick overview of EGASP records, including:
+
+- Total number of records
+- Clinic counts
+- Gender counts
+- Age-group counts
+- Recent records
+- Search
+- Pagination
+- Direct access to encoding and utility functions
+
+### CRF / EGASP Data Management
+
+Authorized users can:
+
+- Create EGASP records
+- View records
+- Edit existing records
+- Search records
+- Review encoded data
+- Manage associated susceptibility information
+
+### Antibiotic Susceptibility Data
+
+The system supports antibiotic susceptibility data including:
+
+- Disk diffusion values
+- MIC values
+- RIS interpretations
+- Antibiotic reference codes
+- Breakpoint configuration
+- Antibiotic uploads
+
+Reference tables can be maintained through the system utilities.
+
+### Reference / Utility Data
+
+Administrative utilities include management of:
+
+- Antibiotics
+- Breakpoints
+- Clinic codes
+- Specimen codes
+- Cities / barangays
+- ARSP laboratory staff
+- Clinic staff
+- Other configurable reference data used by the application
+
+### User and Account Management
+
+The application includes:
+
+- Username/password authentication
+- Account registration
+- Password recovery/reset
+- Administrative account management
+- Role-based access controls
+- Optional Google authentication when configured
+
+Role permissions should be reviewed before production deployment so users only receive the access required for their work.
+
+### Monthly Reports
+
+The Monthly EGASP Report feature can generate an Excel workbook containing:
+
+1. **ARS Data**
+2. **Summary**
+3. **MIC Summary**
+
+The report can be generated from database records or from an uploaded Excel list containing an `ARS Data` worksheet.
+
+Current reporting logic includes clinic summaries for:
+
+- TLY
+- PSH
+- TSH
+
+The summary workbook can include patient/sample totals, culture/Gram-stain summaries, antibiotic usage summaries, age groups, partner-history categories, and MIC summaries for supported antibiotics.
+
+---
+
+## Repository Structure
+
+A simplified project structure is shown below:
+
+```text
+EGASP_DATA/
+├── apps/
+│   ├── authentication/
+│   ├── home/
+│   ├── static/
+│   └── templates/
+├── core/
+├── media/
+├── nginx/
+├── staticfiles/
+├── uploads/
+├── manage.py
+├── requirements.txt
+├── Dockerfile
+├── docker-compose.yml
+├── gunicorn-cfg.py
+├── Procfile
+├── runtime.txt
+├── CHANGELOG.md
+└── README.md
+```
+
+The exact structure may change as the project is updated.
+
+---
+
+# Local Development Setup
+
+## 1. Clone the Repository
+
+```bash
+git clone https://github.com/squarfie/EGASP_Data_v2.10.21.2026.git
+cd EGASP_Data_v2.10.21.2026
+```
+
+If the Django project is inside a nested project directory, enter that directory before running `manage.py`.
+
+---
+
+## 2. Create a Virtual Environment
+
+### Windows
+
+```powershell
+python -m venv egasp
 egasp\Scripts\activate
+```
 
-Mac/Linux:
+### Linux / macOS
 
+```bash
+python3 -m venv egasp
 source egasp/bin/activate
+```
 
-You should now see (egasp) before your command prompt, indicating that the virtual environment is active.
+After activation, the terminal should show the virtual environment name.
 
-4. Install the Required Modules 
-Install all the necessary dependencies:
+---
 
-pip install Django
+## 3. Install Dependencies
+
+Install the project dependencies from `requirements.txt`:
+
+```bash
+python -m pip install --upgrade pip
 pip install -r requirements.txt
-pip install pandas
-pip install psycopg2
-pip install python-decouple
-pip install Unipath
-pip install django-widget-tweaks
-pip install django-phonenumber-field[phonenumbers]
-pip install xhtml2pdf
-pip install whitenoise
-pip install openpyxl
-pip install SQLAlchemy
+```
 
+Do not manually install individual packages unless a dependency is missing from `requirements.txt`.
 
-This will install all the Python modules required for the project.
+If you add a new production dependency, update the dependency file accordingly.
 
-5. Set Up the Database
+---
 
-If the project uses an SQLite or PostgreSQL database, follow these steps to set it up:
+# Environment Configuration
 
+Create a `.env` file in the project root.
 
-# Create a new PostgreSQL database.
+Example:
 
-download PostgreSQL and follow the instructions to install.
+```env
+SECRET_KEY=replace-with-a-secure-secret-key
+DEBUG=True
 
-Open pgadmin
+ALLOWED_HOSTS=127.0.0.1,localhost
 
-Create a new database and use the indicated DB_NAME from the .env file
+DB_ENGINE=django.db.backends.postgresql
+DB_NAME=egasp_db
+DB_USER=postgres
+DB_PASSWORD=replace-with-database-password
+DB_HOST=127.0.0.1
+DB_PORT=5432
+```
 
-Database names:
+Depending on the current `settings.py`, the exact variable names may differ. Match the names expected by the project configuration.
 
-Default (for testing): test_db
+## Optional Email Configuration
 
-For deployment: Egasp_db
+Password-reset functions may require email configuration:
 
-⚡ You may need to update the DB_NAME in the .env file.
-⚡ Uncomment DB_NAME=Egasp_db for deployment, and comment out DB_NAME=test_db.
+```env
+EMAIL_HOST=smtp.example.com
+EMAIL_PORT=587
+EMAIL_HOST_USER=example@example.com
+EMAIL_HOST_PASSWORD=replace-with-app-password
+EMAIL_USE_TLS=True
+DEFAULT_FROM_EMAIL=example@example.com
+```
 
+## Optional Google Authentication
 
-# Run migrations:
+If Google authentication is enabled:
 
+```env
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_SECRET=your-google-client-secret
+```
+
+Never commit OAuth client secrets to Git.
+
+---
+
+# Database Setup
+
+## PostgreSQL
+
+Create a PostgreSQL database and user appropriate for your environment.
+
+Example database:
+
+```text
+egasp_db
+```
+
+Update the `.env` file with the correct credentials.
+
+Then run:
+
+```bash
 python manage.py makemigrations
 python manage.py migrate
+```
 
-6. Start the Application (Development Mode)
-To start the server:
+Normally, committed migrations should already exist. `makemigrations` is only required when model definitions have changed.
 
-Running the Django Development Server:
-To start the server on the default port (8000), run:
+---
 
+## Create an Administrator Account
+
+Create the initial Django superuser:
+
+```bash
+python manage.py createsuperuser
+```
+
+Follow the prompts for username, email, and password.
+
+---
+
+# Initial Reference Data
+
+For a fresh installation, configure the reference tables required by the application.
+
+Depending on the current version, these may include:
+
+- Antibiotics
+- Breakpoints
+- Clinic codes
+- Specimen codes
+- Cities / barangays
+- ARSP laboratory staff
+- Clinic staff
+
+Where upload utilities are available, use the supplied Excel templates to populate large reference tables.
+
+Examples included in the project may include:
+
+```text
+Breakpoints_egasp.xlsx
+AntibioticEntry_egasp.xlsx
+```
+
+Always review uploaded reference files before applying them to a production database.
+
+---
+
+# Run the Development Server
+
+Start Django locally:
+
+```bash
 python manage.py runserver
+```
 
-To allow access from other devices on your local network (LAN), use:
-python manage.py runserver 0.0.0.0:(your preferred port number)
+Open:
 
-example:
+```text
+http://127.0.0.1:8000/
+```
+
+For LAN testing:
+
+```bash
 python manage.py runserver 0.0.0.0:8090
+```
 
-then access the database using any browser by typing:
-http://127.0.0.1:8090
+Then access the server using the host computer's local IP address.
 
+Example:
 
-Or, to bind the server to your machine’s local IP address with a custom port:
-python manage.py runserver 192.168.1.243:8090
+```text
+http://192.168.1.100:8090/
+```
 
-🔹 Replace 192.168.1.243 with your actual local IP address in settings.py "ALLOWED HOSTS"
+Use Django's development server only for development/testing.
 
-🔹 Use only for development/testing. Avoid exposing this in production environments.
+---
 
+# Static Files
 
-🔔 You can change the port number if desired.
-🔔 Important: If deploying with Gunicorn, ensure the port is also updated in the gunicorn-cfg.py configuration file.
+For production deployment, collect static files:
 
-# Application Setup:
+```bash
+python manage.py collectstatic --noinput
+```
 
-7. Register Your Account
-Register your name and password, then log in to the system.
+Verify that `STATIC_ROOT`, `STATIC_URL`, and any Nginx/hosting static aliases match the deployment environment.
 
-8. Configure System Settings
-Configure your codes, breakpoints, antibiotics, and locations using the options under the "Utilities" menu.
+Uploaded files should be stored under the configured media directory and served according to the production web-server configuration.
 
-9. Upload Breakpoints and Antibiotics
-Use the "Breakpoints_egasp.xlsx" template.
+---
 
-First, add the antibiotics and breakpoints into the Excel file.
+# Production Deployment
 
-Upload it through the "Breakpoints" option under the "Utilities" menu on the dashboard.
+The project can be deployed using a standard Django WSGI stack.
 
-You can find the template files inside the template_docs folder located in the main app directory.
+A typical deployment is:
 
-⚡ You can also add more antibiotics and breakpoints directly through the database.
-⚡ However, if you're setting up the database for the first time, the most convenient approach is to upload the Excel file. Before doing so, 
-ensure that all required antibiotics are included in the file.
+```text
+Client
+   ↓
+Nginx
+   ↓
+Gunicorn
+   ↓
+Django
+   ↓
+PostgreSQL
+```
 
-10. Upload Cities List
-Click on "Add Cities" under the Utilities menu, and upload the file named "Citieslist.xlsx" to add the complete list of cities in the Philippines.
+Recommended production settings include:
 
-✨ If you need to add more cities later, you do not need to modify the Excel file.
-✨ The database provides a feature to add and delete the list of cities and barangays directly.
+```env
+DEBUG=False
+```
 
-# Done! 🎉
-You now have the EGASP Database running on your local machine!
+and properly configured:
 
+- `ALLOWED_HOSTS`
+- `CSRF_TRUSTED_ORIGINS`
+- HTTPS
+- secure cookies
+- database credentials
+- static/media paths
+- email settings
+- OAuth settings, if enabled
 
-# Useful TIPS:
-This includes instructions when running in production mode
+Restart the application service after deploying Python/Django code changes.
 
-# Prerequisites
-Before proceeding, ensure that you have the following:
+Reload Nginx only when its configuration has changed.
 
-Docker and Docker Compose installed on your machine or server.
+Before reloading Nginx:
 
-A .env file containing the necessary PostgreSQL credentials.
+```bash
+sudo nginx -t
+```
 
-Your project files, including configurations for Gunicorn, Nginx, and Docker.
+If the configuration test succeeds:
 
-# Setup Instructions
+```bash
+sudo systemctl reload nginx
+```
 
-1. Create the .env file
+---
 
-In the root of your project, make sure you have created a .env file containing the following environment variables for PostgreSQL:
+# Docker
 
-DB_NAME=your_db_name
+The repository includes Docker-related files for containerized deployment.
 
-DB_USER=your_db_user
+Build the images:
 
-DB_PASSWORD=your_db_password
-
-Replace your_db_name, your_db_user, and your_db_password with your actual PostgreSQL database credentials.
-
-
-# if .env file is already created:
---> Update the .env File
-
-Open your .env file and update the paths for your STATIC_DIR and STATICFILES_DIR:
-
-Example static directory:
-D:/EGASP_PRO_050525/EGASP_DATA/apps/static
-
-Example staticfiles directory:
-D:/EGASP_PRO_050525/EGASP_DATA/staticfiles
-
---> If necessary, update the port number to 5432, which is the default for PostgreSQL used by Django.
-
---> Important: If you change the port number, make sure to also update it in the utils.py file to match. Locate the line that defines the database engine and ensure the port is correct:
-
-ex: (if using POSTGRESQL)
-
-engine = create_engine('postgresql+psycopg2://postgres:admin123@localhost:5432/test_db')
-
-
-2. Build the Docker Images
-
-Use the following command to build the Docker images based on the Dockerfiles and configurations you have set up:
-
+```bash
 docker-compose build
-Start the Services
+```
 
-3. Start the services (Django app, PostgreSQL database, and Nginx) in detached mode by running:
+Start the services:
 
+```bash
 docker-compose up -d
+```
 
-This will launch the containers in the background.
+Run migrations:
 
-4. Run Migrations
-
-Apply the Django database migrations to set up the schema by running:
-
+```bash
 docker-compose exec web python manage.py migrate
+```
 
-5. Collect Static Files
+Collect static files:
 
-Collect static files to be served by Nginx:
-
+```bash
 docker-compose exec web python manage.py collectstatic --noinput
+```
 
-6. Start the Development Server
+View logs:
 
-Localhost (Default)
-python manage.py runserver
-
-•	Accessible at: http://127.0.0.1:8000
-
-
-LAN / Custom Port
-To make it accessible across the local network:
-python manage.py runserver 0.0.0.0:8090
-
-•	Accessible from: http://127.0.0.1:8090
-or specify your IP:
-
-python manage.py runserver 10.10.103.54:8090
-
-•	Accessible from other devices: http://10.10.103.54:8090
-
-🔒 Note: This setup is for development only, not for production use.
-
-
-Make sure have added the local IP address (if running in a different IP) at settings.py 
-In this case:
-ALLOWED_HOSTS = [
-    config('SERVER', default=''),  # Use SERVER from .env if exists
-    'localhost',
-    '127.0.0.1',
-    '10.10.103.54',
-    'mariseru.pythonanywhere.com',  # Your PythonAnywhere domain
-]
-
-
-
-7. Accessing the Application
-
-After running the above commands and confirming that the services are running, you can access the application on the following URLs:
-
-Local Machine: http://127.0.0.1:8000/
-
-Remote Server: http://<your_server_ip_or_domain>
-            e.g. http://10.10.103.54:8090/
-
-
-
-8. Optional Steps
-Monitoring Logs
-
-You can monitor the logs for any of the containers (web, nginx, db) by running:
-
+```bash
 docker-compose logs -f
+```
 
-9. Stopping the Services
+Stop the containers:
 
-To stop all services, use the following command:
-
+```bash
 docker-compose down
+```
 
-10. Restarting the Services
+Restart:
 
-If you need to restart all services, use:
-
+```bash
 docker-compose restart
+```
 
-# Notes for Production
+Docker configuration should be reviewed before production use to ensure credentials, volumes, networking, and persistent database storage are correctly configured.
 
-Security: Make sure your PostgreSQL credentials and any other sensitive information are securely stored in the .env file and not exposed in public repositories.
+---
 
-Scaling: If your application grows, you might want to adjust the number of Gunicorn workers or scale your database and web containers.
+# Monthly Report Workflow
 
-Backups: Set up regular backups for the PostgreSQL database to ensure data is protected.
+The monthly reporting module supports generation of an `.xlsx` report.
 
-# Troubleshooting
-PostgreSQL Connection Errors:
+## Generate from Database Records
 
-Ensure the credentials in your .env file are correct.
+The application can build a workbook from EGASP database records.
 
-Verify that PostgreSQL is running using docker-compose ps.
+Generated sheets include:
 
-Static Files Not Loading:
+```text
+ARS Data
+Summary
+MIC Summary
+```
 
-Run python manage.py collectstatic to ensure static files are collected properly.
+## Generate from an Existing Excel List
 
-Make sure Nginx is correctly configured to serve the static files from the correct location.
+An uploaded workbook should contain an `ARS Data` sheet or a compatible active worksheet.
 
-# Gunicorn Issues:
+At minimum, the uploaded list must contain the columns required by the reporting function, including:
 
-If Gunicorn isn’t starting, check the logs with docker-compose logs web for any errors related to Gunicorn or Django.
+```text
+egasp_id
+clinic
+```
 
-Ensure the correct Gunicorn command is being executed by reviewing the docker-compose.yml configuration.
+The report builder derives summary values from the uploaded records and generates the report workbook.
 
-By following this guide, you should be able to successfully deploy your EGASP application in a production environment.
+---
 
+# Antibiotic Entry Relationships
 
-# Missing antiboitic entries when download button is used
-Relinking of entries (this is useful during downloading of entries)
---- > Even if the ForeignKey exists, some AntibioticEntry records might not have ab_idNumber_egasp set, especially if they were created before the foreign key was enforced, or imported without linking. to ensure linking of entries works before download of data, run this:
+Antibiotic records should remain properly linked to their corresponding EGASP record through the configured foreign-key relationship.
 
-1. OPEN DJANGO SHELL
+If legacy imported records are missing this relationship, inspect the affected records before attempting repairs.
 
-Run:
+A diagnostic query can be run from the Django shell:
+
+```bash
 python manage.py shell
+```
 
+Example:
 
-2. Fix Existing Unlinked Data (One-Time Fix):
-
-Run:
-from apps.home.models import AntibioticEntry, Egasp_Data
-
-for entry in AntibioticEntry.objects.filter(ab_idNumber_egasp__isnull=True):
-    try:
-        match = Egasp_Data.objects.get(ID_Number=entry.ab_EgaspId)
-        entry.ab_idNumber_egasp = match
-        entry.save()
-        print(f"Linked {entry.ab_EgaspId} to {match.id}")
-    except Egasp_Data.DoesNotExist:
-        print(f"No match found for {entry.ab_EgaspId}")
-        continue
-
-
-3. Confirm the links were fixed:
-
-Run:
+```python
 from apps.home.models import AntibioticEntry
 
-# Check how many are still unlinked (should be 0 ideally)
+AntibioticEntry.objects.filter(
+    ab_idNumber_egasp__isnull=True
+).count()
+```
+
+Do not automatically relink production records without first confirming that the identifier used for matching is unique and correct.
+
+---
+
+# Testing
+
+Run the Django test suite:
+
+```bash
+python manage.py test
+```
+
+Tests should be run after changes to:
+
+- Authentication
+- Permissions
+- Upload workflows
+- Reporting
+- Data validation
+- Reference tables
+- Export functions
+
+For deployment, run tests before restarting the production application.
+
+---
+
+# Security
+
+## Never Commit Secrets
+
+The following must not be committed to a public repository:
+
+```text
+.env
+database passwords
+SECRET_KEY
+OAuth client secrets
+email passwords
+private keys
+production database dumps
+patient-level data exports
+```
+
+Ensure `.gitignore` covers sensitive and generated files.
+
+Example:
+
+```gitignore
+.env
+.env.*
+*.sqlite3
+*.sql
+*.dump
+*.backup
+__pycache__/
+*.pyc
+venv/
+.venv/
+media/
+```
+
+If a credential is accidentally committed or shared, rotate it immediately.
+
+## Production Recommendations
+
+- Keep Django and dependencies patched.
+- Keep the operating system, PostgreSQL, Nginx, and Gunicorn updated.
+- Use HTTPS.
+- Disable `DEBUG`.
+- Restrict administrator accounts.
+- Apply least-privilege permissions.
+- Validate uploaded files.
+- Maintain database and media backups.
+- Review server/application logs.
+- Do not expose database ports publicly unless explicitly required and secured.
+
+---
+
+# Browser Support
+
+Use a current version of a modern browser.
+
+Recommended:
+
+- Google Chrome
+- Mozilla Firefox
+- Microsoft Edge
+- Brave
+- Other Chromium-based browsers
+
+If an AJAX or JavaScript function behaves unexpectedly:
+
+1. Refresh without cached assets.
+2. Check the browser developer console.
+3. Inspect the Network tab for 403, 404, or 500 responses.
+4. Confirm JavaScript is enabled.
+5. Check CSRF/CORS and mixed-content errors.
+6. Test without browser extensions.
+
+---
+
+# Troubleshooting
+
+## PostgreSQL Connection Error
+
+Check:
+
+- PostgreSQL is running.
+- `.env` credentials are correct.
+- Database name and port are correct.
+- The database user has access to the database.
+
+Typical PostgreSQL port:
+
+```text
+5432
+```
+
+---
+
+## Static Files Not Loading
 
 Run:
-AntibioticEntry.objects.filter(ab_idNumber_egasp__isnull=True).count()
 
-4. Re-test your download feature
-Now go back to your app and trigger the Download Combined Table function.
+```bash
+python manage.py collectstatic --noinput
+```
 
-Since the AntibioticEntry records are now properly connected to Egasp_Data, the antibiotic fields should now appear in the CSV output as expected.
+Then verify the web-server static-file configuration.
 
+---
 
-# Recommended Browser
+## Gunicorn / Application Service Fails to Start
 
-For optimal performance, it is recommended to use any modern, up-to-date version of Chrome, Firefox, Brave, or other equivalent browsers when accessing the system.
+Check the application logs.
 
-Note: The system uses AJAX and JavaScript features that may not function properly on certain browsers.
-Please refer to the “List of Browsers with Possible Issues” for more details.
+For a systemd-based deployment:
 
+```bash
+sudo systemctl status <service-name> --no-pager
+sudo journalctl -u <service-name> -n 100 --no-pager
+```
 
-# List of Browsers with Possible Issues
+To follow logs:
 
-(Feel free to add your browser here if the system behaves unexpectedly while using it.)
+```bash
+sudo journalctl -u <service-name> -f
+```
 
-1. Microsoft Edge
+---
 
-Some AJAX requests or JavaScript functions may not behave as expected due to Edge-specific behaviors or security settings.
+## Excel Report Opens With a Repair Warning
 
-<details> <summary><strong>Microsoft Edge – Troubleshooting Guide</strong></summary> <br>
-1. Clear Browser Cache
+If Microsoft Excel reports:
 
-Edge may load outdated JavaScript files.
+```text
+We found a problem with some content...
+```
 
-Press Ctrl + Shift + Delete
+inspect the generated workbook structure, especially Excel Table definitions and worksheets with headers but no data rows.
 
-Clear Cached images and files and Cookies and site data
+Do not create an Excel Table over a header-only range. Only add a table when the sheet contains at least one data row.
 
-Refresh the page
+---
 
-2. Disable Browser Extensions
+# Backups
 
-Extensions (ad blockers, privacy tools, script blockers) can interfere with AJAX requests.
+Production deployments should maintain regular backups of:
 
-Go to Settings → Extensions
+1. PostgreSQL database
+2. Uploaded/media files
+3. `.env` configuration stored securely
+4. Deployment configuration
+5. Application source code through Git
 
-Temporarily disable all extensions
+Periodically test database restoration procedures.
 
-Test the system again
+---
 
-3. Check the Developer Console for Errors
+# Updating the Project
 
-Use the console to identify what’s failing.
+Before updating:
 
-Press F12 → open Console
+```bash
+git status
+```
 
-Trigger your search or function
+Commit or safely preserve any local changes.
 
-Look for:
+Pull updates:
 
-JavaScript errors
+```bash
+git pull
+```
 
-CORS/CSRF errors
+Install new dependencies if `requirements.txt` changed:
 
-Blocked scripts
+```bash
+pip install -r requirements.txt
+```
 
-Mixed-content warnings
+Apply migrations:
 
-Failed AJAX requests
+```bash
+python manage.py migrate
+```
 
-4. Review the Network Tab
+Collect static files:
 
-Confirm whether the AJAX request is being blocked.
+```bash
+python manage.py collectstatic --noinput
+```
 
-Press F12 → open Network
+Then restart the application service.
 
-Trigger the search
+---
 
-Check for:
+# Development Notes
 
-Requests marked (blocked)
+When adding new features:
 
-Status codes 403, 404, 500
+1. Create or update tests.
+2. Run the test suite.
+3. Review migrations.
+4. Verify role permissions.
+5. Check upload/export behavior.
+6. Confirm no sensitive data is staged in Git.
+7. Update `CHANGELOG.md` and this README when behavior changes.
 
-CORS or security warnings
+---
 
-5. Ensure JavaScript Is Enabled
+# Versioning
 
-Go to Settings → Cookies and site permissions → JavaScript
+The project currently uses date-oriented version identifiers for major working builds.
 
-Set JavaScript to Allowed
+Example:
 
-6. Adjust Tracking Prevention
+```text
+v2.10.22.26
+```
 
-Edge’s tracking prevention may block certain requests.
+Keep `CHANGELOG.md` updated whenever a version is released or deployed.
 
-Go to Settings → Privacy, search, and services
+---
 
-Set Tracking prevention to Balanced (or temporarily Off)
+# License and Third-Party Components
 
-7. Use HTTPS
+This project may include third-party frontend libraries, templates, icons, and Python packages.
 
-Edge may block AJAX calls if the site uses mixed content (HTTPS page with HTTP requests).
+Retain all copyright, attribution, and license notices required by those components.
 
-Access the system via https://
+The original frontend includes Creative Tim / Argon Dashboard components; review their applicable license terms before redistribution or modification.
 
-Ensure all AJAX endpoints also use https://
+---
 
-8. Try InPrivate Mode
+# Project Status
 
-This disables extensions and uses a clean cache environment.
+The EGASP Database is under active development and maintenance.
 
-Press Ctrl + Shift + N
+Current development areas include:
 
-Open the system and test again
+- Data validation
+- User and permission management
+- Reporting
+- Excel import/export
+- Reference-data maintenance
+- UI improvements
+- Production deployment and security hardening
 
-</details>
+---
+
+## Repository
+
+```text
+https://github.com/squarfie/EGASP_Data_v2.10.21.2026
+```
+
+---
+
+## Maintainer Notes
+
+When deploying or handing the system to another administrator, document:
+
+- Production domain
+- Deployment directory
+- Application service name
+- Database name
+- Backup location
+- Static/media locations
+- Required environment-variable names
+- Email configuration
+- OAuth configuration
+- Administrative account ownership
+
+Do not store passwords or secrets in this README.

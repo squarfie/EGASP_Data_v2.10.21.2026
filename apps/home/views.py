@@ -41,7 +41,7 @@ from django.utils.dateparse import parse_date
 from openpyxl.utils.exceptions import InvalidFileException
 from zipfile import BadZipFile
 
-from .reporting import build_report_workbook, rows_from_queryset, rows_from_upload
+from .reporting import build_report_workbook, rows_from_queryset, rows_from_upload, build_eb_report_workbook, rows_from_queryset_eb
 
 @login_required(login_url="/login/")
 def index(request):
@@ -110,9 +110,71 @@ def index(request):
     return render(request, 'home/index.html', context)
 
 
+#GENERATES ONLY ARSP STYLE REPORT
+# @login_required(login_url="/login/")
+# def monthly_report(request):
+#     """Generate the ARS monthly workbook from an upload or Consult_Date range."""
+#     context = {
+#         "from_date": request.POST.get("from_date", ""),
+#         "to_date": request.POST.get("to_date", ""),
+#     }
+
+#     if request.method == "POST":
+#         try:
+#             source = request.POST.get("source")
+#             if source == "upload":
+#                 uploaded_file = request.FILES.get("report_file")
+#                 if not uploaded_file:
+#                     raise ValueError("Choose an EGASP Excel list to generate the report.")
+#                 if not uploaded_file.name.lower().endswith(".xlsx"):
+#                     raise ValueError("The uploaded EGASP list must be an .xlsx file.")
+#                 rows = rows_from_upload(uploaded_file)
+#                 report_label = "uploaded"
+
+
+
+#             elif source == "database":
+#                 from_date = parse_date(context["from_date"])
+#                 to_date = parse_date(context["to_date"])
+#                 if not from_date or not to_date:
+#                     raise ValueError("Select both the start date and end date.")
+#                 if from_date > to_date:
+#                     raise ValueError(
+#                         "The start date must be on or before the end date."
+#                     )
+#                 queryset = Egasp_Data.objects.filter(
+#                     Consult_Date__range=(from_date, to_date)
+#                 )
+#                 rows = rows_from_queryset(queryset)
+#                 report_label = f"{from_date:%Y%m%d}_{to_date:%Y%m%d}"
+#             else:
+#                 raise ValueError("Choose a report source.")
+
+#             payload = build_report_workbook(rows)
+#             timestamp = timezone.localtime().strftime("%Y%m%d_%H%M%S")
+#             response = HttpResponse(
+#                 payload,
+#                 content_type=(
+#                     "application/vnd.openxmlformats-officedocument."
+#                     "spreadsheetml.sheet"
+#                 ),
+#             )
+#             response["Content-Disposition"] = (
+#                 f'attachment; filename="EGASP_{report_label}_summary_ars_'
+#                 f'{timestamp}.xlsx"'
+#             )
+#             return response
+#         except (ValueError, InvalidFileException, BadZipFile) as exc:
+#             context["error"] = str(exc)
+
+#     return render(request, "home/monthly_report.html", context)
+
+
+# GENERATES BOTH ARSP AND EB STYLE REPORT
 @login_required(login_url="/login/")
 def monthly_report(request):
-    """Generate the ARS monthly workbook from an upload or Consult_Date range."""
+    """Generate ARSP-style or EB-style EGASP workbook from upload or date range."""
+
     context = {
         "from_date": request.POST.get("from_date", ""),
         "to_date": request.POST.get("to_date", ""),
@@ -121,33 +183,80 @@ def monthly_report(request):
     if request.method == "POST":
         try:
             source = request.POST.get("source")
+            report_style = request.POST.get("report_style", "arsp")
+
+            # =========================================================
+            # UPLOADED EXCEL FILE
+            # =========================================================
             if source == "upload":
                 uploaded_file = request.FILES.get("report_file")
+
                 if not uploaded_file:
-                    raise ValueError("Choose an EGASP Excel list to generate the report.")
+                    raise ValueError(
+                        "Choose an EGASP Excel list to generate the report."
+                    )
+
                 if not uploaded_file.name.lower().endswith(".xlsx"):
-                    raise ValueError("The uploaded EGASP list must be an .xlsx file.")
+                    raise ValueError(
+                        "The uploaded EGASP list must be an .xlsx file."
+                    )
+
+                # Same uploaded rows can be used by either report style
                 rows = rows_from_upload(uploaded_file)
+
                 report_label = "uploaded"
+
+            # =========================================================
+            # DATABASE / DATE RANGE
+            # =========================================================
             elif source == "database":
                 from_date = parse_date(context["from_date"])
                 to_date = parse_date(context["to_date"])
+
                 if not from_date or not to_date:
-                    raise ValueError("Select both the start date and end date.")
+                    raise ValueError(
+                        "Select both the start date and end date."
+                    )
+
                 if from_date > to_date:
                     raise ValueError(
                         "The start date must be on or before the end date."
                     )
+
                 queryset = Egasp_Data.objects.filter(
                     Consult_Date__range=(from_date, to_date)
                 )
-                rows = rows_from_queryset(queryset)
-                report_label = f"{from_date:%Y%m%d}_{to_date:%Y%m%d}"
+
+                # Build rows depending on report style
+                if report_style == "eb":
+                    rows = rows_from_queryset_eb(queryset)
+                else:
+                    rows = rows_from_queryset(queryset)
+
+                report_label = (
+                    f"{from_date:%Y%m%d}_{to_date:%Y%m%d}"
+                )
+
             else:
                 raise ValueError("Choose a report source.")
 
-            payload = build_report_workbook(rows)
-            timestamp = timezone.localtime().strftime("%Y%m%d_%H%M%S")
+            # =========================================================
+            # BUILD THE SELECTED WORKBOOK
+            # =========================================================
+            if report_style == "eb":
+                payload = build_eb_report_workbook(rows)
+                style_label = "eb"
+            else:
+                payload = build_report_workbook(rows)
+                style_label = "ars"
+
+            # =========================================================
+            # DOWNLOAD RESPONSE
+            # =========================================================
+            timestamp = timezone.localtime().strftime(
+                "%Y%m%d_%H%M%S"
+            )
+
             response = HttpResponse(
                 payload,
                 content_type=(
@@ -155,19 +264,28 @@ def monthly_report(request):
                     "spreadsheetml.sheet"
                 ),
             )
+
             response["Content-Disposition"] = (
-                f'attachment; filename="EGASP_{report_label}_summary_ars_'
-                f'{timestamp}.xlsx"'
+                f'attachment; filename="EGASP_{report_label}_'
+                f'{style_label}_{timestamp}.xlsx"'
             )
+
             return response
-        except (ValueError, InvalidFileException, BadZipFile) as exc:
+
+        except (
+            ValueError,
+            InvalidFileException,
+            BadZipFile,
+        ) as exc:
             context["error"] = str(exc)
 
-    return render(request, "home/monthly_report.html", context)
+    return render(
+        request,
+        "home/monthly_report.html",
+        context,
+    )
 
-
-
-
+###################################
 
 
 @login_required(login_url="/login/")
